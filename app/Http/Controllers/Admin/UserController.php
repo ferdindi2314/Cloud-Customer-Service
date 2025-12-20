@@ -11,35 +11,24 @@ use Throwable;
 
 class UserController extends Controller
 {
-    public function index(UserService $userService)
+    public function index(Request $request)
     {
-        $users = User::query()->orderBy('name')->paginate(20);
+        $query = User::query();
 
-        try {
-            $collection = $users->getCollection()->map(function ($u) use ($userService) {
-                $found = null;
-                try {
-                    $found = $userService->findByLaravelId((string)$u->id);
-                } catch (\Throwable $e) {
-                    logger()->error('Firestore lookup failed for user ' . $u->id . ': ' . $e->getMessage());
-                }
-
-                $u->firestore_doc_id = $found['id'] ?? null;
-                $u->firestore_synced = (bool) ($found !== null);
-                return $u;
-            });
-
-            $users->setCollection($collection);
-        } catch (\Throwable $e) {
-            logger()->error('Failed to enrich users with Firestore info: ' . $e->getMessage());
+        // Filter berdasarkan role jika ada parameter ?role=
+        if ($request->has('role')) {
+            $query->where('role', $request->role);
         }
+
+        $users = $query->orderBy('name')->paginate(20);
 
         return view('admin.users.index', compact('users'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('admin.users.create');
+        $role = $request->query('role');
+        return view('admin.users.create', compact('role'));
     }
 
     public function store(Request $request, UserService $userService)
@@ -71,7 +60,9 @@ class UserController extends Controller
             logger()->error('Failed to write user to Firestore: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dibuat');
+        // Redirect ke halaman manajemen sesuai role yang baru dibuat
+        return redirect()->route('admin.users.index', ['role' => $user->role])
+            ->with('success', 'User berhasil dibuat');
     }
 
     public function show(User $user, UserService $userService)

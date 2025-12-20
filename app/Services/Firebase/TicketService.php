@@ -2,6 +2,8 @@
 
 namespace App\Services\Firebase;
 
+use App\Models\Ticket;
+use App\Models\TicketComment;
 use Google\Cloud\Core\Timestamp;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -38,8 +40,14 @@ class TicketService
      */
     public function getAllTickets(): array
     {
-        $documents = $this->firestore->collection('tickets')->documents();
-        return $this->documentsToArray($documents);
+        // Use Laravel DB for faster queries
+        $tickets = Ticket::with(['customer', 'agent', 'category'])
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(fn($ticket) => $this->ticketToArray($ticket))
+            ->toArray();
+
+        return $tickets;
     }
 
     /**
@@ -47,55 +55,118 @@ class TicketService
      */
     public function getTicketsByCustomer(string $customerId): array
     {
-        $documents = $this->firestore->collection('tickets')
-            ->where('customer_id', '=', $customerId)
-            ->documents();
+        // Use Laravel DB for faster queries
+        $tickets = Ticket::with(['customer', 'agent', 'category'])
+            ->where('customer_id', $customerId)
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(fn($ticket) => $this->ticketToArray($ticket))
+            ->toArray();
 
-        return $this->documentsToArray($documents);
+        return $tickets;
+    }
+
+    /**
+     * Get tickets by agent (yang DI-ASSIGN ke agent tertentu)
+     * @return array<int, array<string, mixed>>
+     */
+    public function getTicketsByAgent(int $agentId): array
+    {
+        // Agent HANYA lihat tickets yang di-assign ke dia
+        $tickets = Ticket::with(['customer', 'agent', 'category'])
+            ->where('agent_id', $agentId)
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(fn($ticket) => $this->ticketToArray($ticket))
+            ->toArray();
+
+        return $tickets;
     }
 
     public function createTicket(array $data): string
     {
         $now = new Timestamp(Carbon::now('Asia/Jakarta'));
-        $data['created_at'] = $now;
-        $data['updated_at'] = $now;
-        $data['status'] = $data['status'] ?? 'open';
+        $firebaseData = $data;
+        $firebaseData['created_at'] = $now;
+        $firebaseData['updated_at'] = $now;
+        $firebaseData['status'] = $data['status'] ?? 'open';
 
         // ensure customer_id is stored as string to avoid Firestore type mismatch
-        if (isset($data['customer_id'])) {
-            $data['customer_id'] = (string) $data['customer_id'];
+        if (isset($firebaseData['customer_id'])) {
+            $firebaseData['customer_id'] = (string) $firebaseData['customer_id'];
         }
 
-        $ticketRef = $this->firestore->collection('tickets')->add($data);
-        return $ticketRef->id();
+        // Save to Firestore
+        $ticketRef = $this->firestore->collection('tickets')->add($firebaseData);
+        $firebaseId = $ticketRef->id();
+
+        // Sync to Laravel DB
+        $data['firebase_id'] = $firebaseId;
+        $ticket = Ticket::create($data);
+
+        return $firebaseId;
     }
 
     public function findTicket(string $id)
     {
+        // Try Laravel DB first (faster)
+        $ticket = Ticket::where('firebase_id', $id)->first();
+        if ($ticket) {
+            return $ticket;
+        }
+
+        // Fallback to Firestore
         return $this->firestore->collection('tickets')->document($id)->snapshot();
     }
 
     public function getTicket(string $id): ?array
     {
-        $snapshot = $this->findTicket($id);
+        // Try Laravel DB first
+        $ticket = Ticket::with(['customer', 'agent', 'category', 'comments.user'])
+            ->where('firebase_id', $id)
+            ->first();
+
+        if ($ticket) {
+            return $this->ticketToArray($ticket);
+        }
+
+        // Fallback to Firestore
+        $snapshot = $this->firestore->collection('tickets')->document($id)->snapshot();
         if (!$snapshot->exists()) {
             return null;
         }
 
-        $ticket = $snapshot->data();
-        $ticket['id'] = $snapshot->id();
-        return $this->normalizeTicket($ticket);
+        $ticketData = $snapshot->data();
+        $ticketData['id'] = $snapshot->id();
+        return $this->normalizeTicket($ticketData);
     }
 
     public function updateTicket(string $id, array $data): void
     {
-        $data['updated_at'] = new Timestamp(Carbon::now('Asia/Jakarta'));
-        $this->firestore->collection('tickets')->document($id)->set($data, ['merge' => true]);
+        $now = new Timestamp(Carbon::now('Asia/Jakarta'));
+        $firebaseData = $data;
+        $firebaseData['updated_at'] = $now;
+
+        // Update Firestore
+        $this->firestore->collection('tickets')->document($id)->set($firebaseData, ['merge' => true]);
+
+        // Sync to Laravel DB
+        $ticket = Ticket::where('firebase_id', $id)->first();
+        if ($ticket) {
+            $ticket->update($data);
+        }
     }
 
     public function deleteTicket(string $id): void
     {
+        // Delete from Firestore
         $this->firestore->collection('tickets')->document($id)->delete();
+
+        // Delete from Laravel DB (soft delete)
+        $ticket = Ticket::where('firebase_id', $id)->first();
+        if ($ticket) {
+            $ticket->delete();
+        }
     }
 
     /**
@@ -200,17 +271,18 @@ class TicketService
      */
     public function getComments(string $ticketId): array
     {
-        $documents = $this->firestore
-            ->collection('tickets')
-            ->document($ticketId)
-            ->collection('comments')
-            ->orderBy('created_at', 'asc')
-            ->documents();
-
-        $comments = $this->documentsToArray($documents);
-        foreach ($comments as &$comment) {
-            $comment = $this->normalizeComment($comment);
+        // Use Laravel DB for faster queries
+        $ticket = Ticket::where('firebase_id', $ticketId)->first();
+        if (!$ticket) {
+            return [];
         }
+
+        $comments = TicketComment::with('user')
+            ->where('ticket_id', $ticket->id)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn($comment) => $this->commentToArray($comment))
+            ->toArray();
 
         return $comments;
     }
@@ -218,19 +290,34 @@ class TicketService
     public function addComment(string $ticketId, array $data): string
     {
         $now = new Timestamp(Carbon::now('Asia/Jakarta'));
-        $data['created_at'] = $now;
-        $data['updated_at'] = $now;
+        $firebaseData = $data;
+        $firebaseData['created_at'] = $now;
+        $firebaseData['updated_at'] = $now;
 
+        // Save to Firestore
         $ref = $this->firestore
             ->collection('tickets')
             ->document($ticketId)
             ->collection('comments')
-            ->add($data);
+            ->add($firebaseData);
 
-        // update ticket timestamp for list sorting/visibility
+        $firebaseCommentId = $ref->id();
+
+        // Sync to Laravel DB
+        $ticket = Ticket::where('firebase_id', $ticketId)->first();
+        if ($ticket) {
+            $data['firebase_id'] = $firebaseCommentId;
+            $data['ticket_id'] = $ticket->id;
+            TicketComment::create($data);
+
+            // Update ticket timestamp
+            $ticket->touch();
+        }
+
+        // update ticket timestamp in Firestore for list sorting/visibility
         $this->updateTicket($ticketId, ['updated_at' => $now]);
 
-        return $ref->id();
+        return $firebaseCommentId;
     }
 
     private function documentsToArray($documents): array
@@ -274,5 +361,47 @@ class TicketService
             $comment['updated_at_iso'] = Carbon::instance($comment['updated_at']->get())->setTimezone('Asia/Jakarta')->toDateTimeString();
         }
         return $comment;
+    }
+
+    /**
+     * Convert Laravel Ticket model to array
+     */
+    private function ticketToArray(Ticket $ticket): array
+    {
+        return [
+            'id' => $ticket->firebase_id ?? $ticket->id,
+            'title' => $ticket->title,
+            'description' => $ticket->description,
+            'customer_id' => (string)$ticket->customer_id,
+            'customer_name' => $ticket->customer->name ?? 'Unknown',
+            'agent_id' => $ticket->agent_id ? (string)$ticket->agent_id : null,
+            'agent_name' => $ticket->agent->name ?? null,
+            'category_id' => (string)$ticket->category_id,
+            'category' => $ticket->category->name ?? 'Unknown',
+            'status' => $ticket->status,
+            'priority' => $ticket->priority,
+            'attachments' => $ticket->attachments ?? [],
+            'created_at_iso' => $ticket->created_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
+            'updated_at_iso' => $ticket->updated_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
+        ];
+    }
+
+    /**
+     * Convert Laravel TicketComment model to array
+     */
+    private function commentToArray(TicketComment $comment): array
+    {
+        return [
+            'id' => $comment->firebase_id ?? $comment->id,
+            'ticket_id' => $comment->ticket->firebase_id ?? $comment->ticket_id,
+            'user_id' => (string)$comment->user_id,
+            'user_name' => $comment->user->name ?? 'Unknown',
+            'user_role' => $comment->user->role ?? 'customer',
+            'comment' => $comment->comment,
+            'attachments' => $comment->attachments ?? [],
+            'is_internal' => $comment->is_internal,
+            'created_at_iso' => $comment->created_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
+            'updated_at_iso' => $comment->updated_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
+        ];
     }
 }

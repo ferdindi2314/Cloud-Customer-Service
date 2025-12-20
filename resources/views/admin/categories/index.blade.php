@@ -1,8 +1,11 @@
-@extends('layouts.bootstrap')
+@extends('layouts.sidebar')
+
+@section('page-title', '📂 Manajemen Kategori')
 
 @section('title', 'Manajemen Kategori')
 
 @section('content')
+<div class="container-fluid">
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Manajemen Kategori</h1>
     <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">Tambah Kategori</a>
@@ -46,5 +49,6 @@
 
 <div class="mt-3">
     {{ $categories->links() }}
+</div>
 </div>
 @endsection

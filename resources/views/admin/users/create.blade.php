@@ -1,16 +1,39 @@
-@extends('layouts.bootstrap')
+@extends('layouts.sidebar')
 
-@section('title', 'Tambah User')
+@php
+    $pageTitle = '➕ Tambah Pengguna';
+    $cardTitle = 'Tambah Pengguna Baru';
+    
+    if (isset($role)) {
+        if ($role === 'admin') {
+            $pageTitle = '➕ Tambah Admin';
+            $cardTitle = 'Tambah Admin Baru';
+        } elseif ($role === 'agent') {
+            $pageTitle = '➕ Tambah Operator';
+            $cardTitle = 'Tambah Operator Baru';
+        } elseif ($role === 'customer') {
+            $pageTitle = '➕ Tambah User';
+            $cardTitle = 'Tambah User Baru';
+        }
+    }
+@endphp
+
+@section('page-title', $pageTitle)
+
+@section('title', $pageTitle)
 
 @section('content')
-<div class="container">
+<div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">Tambah User Baru</div>
+                <div class="card-header">{{ $cardTitle }}</div>
 
                 <div class="card-body">
                     <form method="POST" action="{{ route('admin.users.store') }}">
+                        @if(isset($role))
+                            <input type="hidden" name="role" value="{{ $role }}">
+                        @endif
                         @csrf
 
                         <div class="mb-3">
@@ -24,32 +47,36 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Password</label>
+                            <label class="form-label">Kata Sandi</label>
                             <input type="password" name="password" class="form-control" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Confirm Password</label>
+                            <label class="form-label">Konfirmasi Kata Sandi</label>
                             <input type="password" name="password_confirmation" class="form-control" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Role</label>
-                            <select name="role" class="form-select" required>
-                                <option value="customer">customer</option>
-                                <option value="agent">agent</option>
-                                <option value="admin">admin</option>
+                            <label class="form-label">Peran</label>
+                            <select name="role" class="form-select" {{ isset($role) ? 'readonly disabled' : 'required' }}>
+                                <option value="customer" {{ (isset($role) && $role === 'customer') || old('role') === 'customer' ? 'selected' : '' }}>Customer</option>
+                                <option value="agent" {{ (isset($role) && $role === 'agent') || old('role') === 'agent' ? 'selected' : '' }}>Agent (Operator)</option>
+                                <option value="admin" {{ (isset($role) && $role === 'admin') || old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
                             </select>
+                            @if(isset($role))
+                                <input type="hidden" name="role" value="{{ $role }}">
+                            @endif
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" type="submit">Buat User</button>
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Batal</a>
+                            <button class="btn btn-primary" type="submit">Buat Pengguna</button>
+                            <a href="{{ route('admin.users.index', isset($role) ? ['role' => $role] : []) }}" class="btn btn-outline-secondary">Batal</a>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

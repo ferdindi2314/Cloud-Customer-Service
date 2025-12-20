@@ -7,7 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">Detail User</div>
+                <div class="card-header">Detail Pengguna</div>
                 <div class="card-body">
                     <dl class="row">
                         <dt class="col-sm-3">ID</dt>
@@ -19,7 +19,7 @@
                         <dt class="col-sm-3">Email</dt>
                         <dd class="col-sm-9">{{ $user->email }}</dd>
 
-                        <dt class="col-sm-3">Role</dt>
+                        <dt class="col-sm-3">Peran</dt>
                         <dd class="col-sm-9">{{ $user->role }}</dd>
                     </dl>
 
@@ -36,7 +36,7 @@
                     @endif
 
                     <div class="mt-3 d-flex gap-2">
-                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary">Edit</a>
+                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary">Ubah</a>
                         <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')">
                             @csrf
                             @method('DELETE')

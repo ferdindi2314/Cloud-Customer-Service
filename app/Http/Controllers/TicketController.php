@@ -9,17 +9,32 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-
-
+/**
+ * TicketController - Controller untuk mengelola Tickets
+ * 
+ * ALUR SEDERHANA:
+ * 1. Customer buat ticket (create/store)
+ * 2. Admin lihat semua tickets & assign ke agent (index)
+ * 3. Agent update status & tambah komentar (show/updateStatus)
+ * 4. Semua pihak bisa lihat progress real-time
+ */
 class TicketController extends Controller
 {
     protected $ticketService;
 
     public function __construct(TicketService $ticketService)
     {
+        // Inject TicketService untuk akses Firestore & Laravel DB
         $this->ticketService = $ticketService;
     }
 
+    /**
+     * STEP 1: Tampilkan daftar tickets
+     * ATURAN BARU:
+     * - Admin: Lihat SEMUA tickets
+     * - Agent: Lihat tickets yang DI-ASSIGN ke dia saja (assigned_agent_id = user->id)
+     * - Customer: Lihat tickets MEREKA saja
+     */
     public function index()
     {
         /** @var User|null $user */
@@ -28,45 +43,69 @@ class TicketController extends Controller
             return redirect()->route('login');
         }
 
-        if (in_array($user->role, ['admin', 'agent'])) {
+        // Cek role user untuk filter tickets
+        if ($user->role === 'admin') {
+            // Admin lihat SEMUA tickets
             $tickets = $this->ticketService->getAllTickets();
+        } elseif ($user->role === 'agent') {
+            // Agent HANYA lihat tickets yang DI-ASSIGN ke dia
+            // Jadi kalau belum di-assign, agent tidak lihat
+            $tickets = $this->ticketService->getTicketsByAgent($user->id);
         } else {
+            // Customer hanya lihat milik dia
             $tickets = $this->ticketService->getTicketsByCustomer($user->id);
         }
 
         return view('tickets.index', compact('tickets'));
     }
 
+    /**
+     * STEP 2: Form buat ticket baru (Customer)
+     */
     public function create()
     {
+        // Ambil semua kategori untuk dropdown
         $categories = Category::orderBy('name')->get();
         return view('tickets.create', compact('categories'));
     }
 
+    /**
+     * STEP 3: Simpan ticket baru ke Firestore & Laravel DB
+     * FLOW: Form → Validasi → Save to Firestore → Sync to Laravel DB → Upload Files
+     */
     public function store(Request $request)
     {
+        // Validasi input form
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'priority'    => 'required|in:low,medium,high',
-            'attachments.*' => 'nullable|file|max:2048',
+            'attachments.*' => 'nullable|file|max:2048', // Max 2MB per file
         ]);
 
+        // Siapkan data ticket
         $data = $request->only(['title', 'description', 'priority']);
+
+        // Ambil nama kategori
         $cat = Category::find($request->input('category_id'));
         if ($cat) {
             $data['category_id'] = (string)$cat->id;
             $data['category'] = $cat->name;
         }
+
+        // Set customer_id dari user yang login
         $data['customer_id'] = Auth::id();
 
+        // Simpan ke Firestore (akan auto-sync ke Laravel DB)
         $ticketId = $this->ticketService->createTicket($data);
 
+        // Upload attachments jika ada
         $files = $request->file('attachments', []);
         if (is_array($files) && count($files) > 0) {
             $attachments = $this->ticketService->uploadAttachments($files, $ticketId);
             if (count($attachments) > 0) {
+                // Update ticket dengan info attachments
                 $this->ticketService->updateTicket($ticketId, ['attachments' => $attachments]);
             }
         }
@@ -92,9 +131,20 @@ class TicketController extends Controller
             }
         }
 
-        return view('tickets.show', compact('ticket', 'comments'));
+        // Ambil list agents untuk dropdown (admin only)
+        $agents = [];
+        if (Auth::user()->role === 'admin') {
+            $agents = User::where('role', 'agent')->orderBy('name')->get();
+        }
+
+        return view('tickets.show', compact('ticket', 'comments', 'agents'));
     }
 
+    /**
+     * STEP 4: Edit ticket (HANYA CUSTOMER YANG BUAT & MASIH STATUS OPEN)
+     * Admin/Agent TIDAK BOLEH edit ticket customer
+     * Customer TIDAK BOLEH edit ticket yang sudah diproses (status bukan 'open')
+     */
     public function edit(string $id)
     {
         $ticket = $this->ticketService->getTicket($id);
@@ -102,14 +152,24 @@ class TicketController extends Controller
             abort(404);
         }
 
-        // Hanya pembuat atau admin/agent boleh edit (aturan bisa disesuaikan)
         /** @var User|null $user */
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login');
         }
-        if ((string)($ticket['customer_id'] ?? '') !== (string)$user->id && !in_array($user->role, ['admin', 'agent'])) {
-            abort(403);
+
+        // ATURAN 1: Hanya customer yang membuat ticket yang boleh edit
+        if ((string)($ticket['customer_id'] ?? '') !== (string)$user->id) {
+            return redirect()->route('tickets.show', $id)
+                ->with('error', 'Anda tidak bisa mengedit ticket orang lain. Admin/Agent hanya bisa update status.');
+        }
+
+        // ATURAN 2: Hanya ticket dengan status 'open' yang boleh diedit
+        // Kenapa? Karena jika sudah di-assign/dikerjakan, tidak boleh ubah konten
+        // Analogi: Laporan sudah masuk ke manager, tidak bisa diubah lagi
+        if (($ticket['status'] ?? 'open') !== 'open') {
+            return redirect()->route('tickets.show', $id)
+                ->with('error', 'Ticket yang sudah diproses tidak bisa diedit. Gunakan komentar untuk update tambahan.');
         }
 
         $categories = Category::orderBy('name')->get();
@@ -143,17 +203,30 @@ class TicketController extends Controller
         return redirect()->route('tickets.index')->with('success', 'Ticket berhasil dihapus');
     }
 
+    /**
+     * ASSIGN TICKET KE AGENT (Admin only)
+     * ALUR: Admin pilih agent dari dropdown → Klik "Tugaskan" → Ticket masuk ke agent
+     */
     public function assignAgent(Request $request, string $id)
     {
+        // Validasi: agent_id harus valid dan role = agent
         $request->validate([
-            'agent_id' => 'required|string',
+            'agent_id' => 'required|exists:users,id',
         ]);
 
+        // Cek apakah user yang dipilih benar-benar agent
+        $agent = User::find($request->agent_id);
+        if (!$agent || $agent->role !== 'agent') {
+            return back()->with('error', 'User yang dipilih bukan agent.');
+        }
+
+        // Update ticket: assign ke agent & ubah status jadi 'in_progress'
         $this->ticketService->updateTicket($id, [
-            'assigned_agent_id' => $request->agent_id,
+            'agent_id' => (int)$request->agent_id, // Field database: agent_id (bukan assigned_agent_id)
+            'status' => 'in_progress', // Auto ubah status jadi in_progress
         ]);
 
-        return back()->with('success', 'Ticket berhasil di-assign ke agent');
+        return back()->with('success', "Ticket berhasil ditugaskan ke {$agent->name}");
     }
 
     public function updateStatus(Request $request, string $id)

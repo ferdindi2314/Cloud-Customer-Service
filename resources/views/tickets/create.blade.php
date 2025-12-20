@@ -1,11 +1,12 @@
-@extends('layouts.bootstrap')
+@extends('layouts.sidebar')
 
-@section('title', 'Buat Ticket Baru')
+@section('page-title', '➕ Buat Tiket Baru')
+
+@section('title', 'Buat Tiket')
 
 @section('content')
-<h1 class="h3 mb-3">Buat Ticket Baru</h1>
-
-@if($errors->any())
+<div class="container-fluid">
+    @if($errors->any())
     <div class="alert alert-danger">
         <div class="fw-semibold mb-1">Validasi gagal:</div>
         <ul class="mb-0">
@@ -20,9 +21,9 @@
     @csrf
     <div class="mb-3">
         <label for="title" class="form-label">Judul</label>
-        <input type="text" name="title" id="title"
-               class="form-control @error('title') is-invalid @enderror"
-               value="{{ old('title') }}">
+         <input type="text" name="title" id="title"
+             class="form-control @error('title') is-invalid @enderror"
+             value="{{ old('title') }}" placeholder="Contoh: Meja rusak saat pemasangan">
         @error('title')
         <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -40,6 +41,7 @@
         @error('category_id')
         <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+        <div class="form-text">Kategori membantu tim mengarahkan ticket ke agent yang tepat.</div>
     </div>
 
     <div class="mb-3">
@@ -54,12 +56,13 @@
         @error('priority')
         <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+        <div class="form-text">Gunakan prioritas tinggi untuk isu yang kritikal.</div>
     </div>
 
     <div class="mb-3">
         <label for="description" class="form-label">Deskripsi</label>
         <textarea name="description" id="description" rows="5"
-                  class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
+              class="form-control @error('description') is-invalid @enderror" placeholder="Jelaskan masalah, langkah yang sudah dicoba, dan harapan perbaikan.">{{ old('description') }}</textarea>
         @error('description')
         <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -67,8 +70,9 @@
 
     <div class="mb-3">
         <label for="attachments" class="form-label">Lampiran (opsional)</label>
-        <input type="file" name="attachments[]" id="attachments" class="form-control"
-               multiple>
+         <input type="file" name="attachments[]" id="attachments" class="form-control"
+             multiple>
+         <div class="form-text">Format umum didukung (PDF, JPG, PNG). Maks per file 2MB.</div>
     </div>
 
     <button type="submit" class="btn btn-primary">Kirim Ticket</button>

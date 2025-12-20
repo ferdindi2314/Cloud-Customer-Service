@@ -1,112 +1,144 @@
 @extends('layouts.bootstrap')
 
-@section('title', config('app.name', 'Cloud Ticketing'))
+@section('title', 'Electronic Service - Dashboard')
 
 @section('content')
-<div class="bg-body-tertiary rounded-3 p-4 p-md-5 mb-4">
-    <div class="container-fluid py-2">
-        <div class="row align-items-center g-4">
+<!-- Hero Section -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; border-radius: 10px; margin-bottom: 50px;">
+    <div class="container">
+        <div class="row align-items-center">
             <div class="col-lg-7">
-                <div class="badge text-bg-dark mb-3">Laravel + Firebase</div>
-                <h1 class="display-5 fw-bold mb-3">Cloud Customer Support & Ticketing</h1>
-                <p class="lead mb-4">Platform ticketing berbasis cloud untuk customer, agent, dan admin. Ticket disimpan di Firestore, lampiran di Firebase Storage, dan user/role di database Laravel agar autentikasi tetap stabil.</p>
-
-                <div class="d-flex flex-wrap gap-2">
+                <h1 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 20px;">🔧 Electronic Service Center</h1>
+                <p style="font-size: 1.3rem; margin-bottom: 30px; line-height: 1.8; opacity: 0.95;">
+                    Platform layanan purna jual & perbaikan perangkat elektronik berbasis cloud. Kelola ticket service, status garansi, sparepart, dan penugasan teknisi dengan cepat dan transparan.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
                     @guest
-                        <a href="{{ route('login') }}" class="btn btn-primary btn-lg">Login</a>
+                        <a href="{{ route('login') }}" class="btn btn-light btn-lg fw-bold">🔐 Masuk Sekarang</a>
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-lg">Register</a>
+                            <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg fw-bold">📝 Daftar Akun</a>
                         @endif
                     @else
-                        <a href="{{ route('dashboard') }}" class="btn btn-primary btn-lg">Buka Dashboard</a>
-                        <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary btn-lg">Lihat Tickets</a>
+                        <a href="{{ route('tickets.index') }}" class="btn btn-light btn-lg fw-bold">🎫 Lihat Tiket</a>
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-light btn-lg fw-bold">Keluar</button>
+                        </form>
                     @endguest
-                </div>
-            </div>
-
-            <div class="col-lg-5">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Akun Demo (Seeder)</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Role</th>
-                                        <th>Email</th>
-                                        <th>Password</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><span class="badge text-bg-danger">admin</span></td>
-                                        <td>adminfirebase@gmail.com</td>
-                                        <td>admin123</td>
-                                    </tr>
-                                    <tr>
-                                        <td><span class="badge text-bg-warning">agent</span></td>
-                                        <td>agent@gmail.com</td>
-                                        <td>agent123</td>
-                                    </tr>
-                                    <tr>
-                                        <td><span class="badge text-bg-success">customer</span></td>
-                                        <td>customer@gmail.com</td>
-                                        <td>customer123</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="small text-muted mt-3">Jika belum ada, jalankan: <code>php artisan migrate --seed</code></div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+    <!-- Minimal Dashboard Cards -->
+    <div class="container mb-5">
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Ticket Aktif</h6>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span style="font-size: 2rem; font-weight: 700; color: #667eea;">Live</span>
+                            <small class="text-muted">monitor langsung</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Teknisi</h6>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span style="font-size: 2rem; font-weight: 700; color: #764ba2;">Ready</span>
+                            <small class="text-muted">penugasan otomatis</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Sparepart</h6>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span style="font-size: 2rem; font-weight: 700; color: #12b981;">Terkontrol</span>
+                            <small class="text-muted">tracking kebutuhan</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Garansi</h6>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span style="font-size: 2rem; font-weight: 700; color: #f59e0b;">Terpantau</span>
+                            <small class="text-muted">validasi cepat</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="container mb-5">
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Buat Ticket</h5>
-                    <p class="card-text">Customer membuat ticket, mengunggah lampiran, dan memantau status secara transparan.</p>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Operasional Layanan</h5>
+                        <p class="text-muted mb-4" style="line-height: 1.7;">Pantau antrean service, update status, dan komunikasikan progres ke pelanggan secara real-time.</p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="px-3 py-2 rounded" style="background:#f3f4ff; color:#4f46e5; font-weight:600;">📥 Intake Ticket</div>
+                            <div class="px-3 py-2 rounded" style="background:#fdf2f8; color:#db2777; font-weight:600;">🛠️ Diagnosa & Sparepart</div>
+                            <div class="px-3 py-2 rounded" style="background:#ecfdf3; color:#047857; font-weight:600;">📦 Proses & Uji</div>
+                            <div class="px-3 py-2 rounded" style="background:#fff7ed; color:#c2410c; font-weight:600;">✅ Selesai & Serah</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Workflow Agent</h5>
-                    <p class="card-text">Agent mengelola antrian, membalas komentar, dan memproses penyelesaian ticket.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Kontrol Admin</h5>
-                    <p class="card-text">Admin mengatur role user, melakukan assignment agent, dan kontrol status ticket.</p>
+            <div class="col-lg-4">
+                <div class="card h-100" style="border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Quick Actions</h5>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('tickets.index') }}" class="btn btn-primary btn-lg">🎫 Lihat Ticket</a>
+                            <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary btn-lg">➕ Ticket Baru</a>
+                            <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary">📊 Monitoring Layanan</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row g-4 mt-1">
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Penyimpanan Cloud</h5>
-                    <p class="card-text mb-0">Ticket & komentar di Firestore (dokumen), lampiran di Firebase Storage. Data user & role tetap di database Laravel agar autentikasi, session, dan policy konsisten.</p>
-                </div>
-            </div>
+    <!-- CTA Section -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px 30px; border-radius: 10px; text-align: center; margin-top: 50px;">
+        <h2 style="font-size: 2rem; margin-bottom: 20px;">Siap Menggunakan Electronic Service?</h2>
+        <p style="font-size: 1.1rem; margin-bottom: 30px; opacity: 0.95;">Implementasikan service center berbasis cloud dengan proses terukur, transparan, dan scalable</p>
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+            @guest
+                <a href="{{ route('login') }}" class="btn btn-light btn-lg fw-bold">🔐 Masuk Sekarang</a>
+            @else
+                <a href="{{ route('tickets.index') }}" class="btn btn-light btn-lg fw-bold">🎫 Lihat Tiket</a>
+            @endguest
         </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">UI Bootstrap Saja</h5>
-                    <p class="card-text mb-0">Landing page, auth, tickets, dan dashboard memakai layout Bootstrap agar tidak bentrok dengan Tailwind/Breeze.</p>
-                </div>
+    </div>
+<!-- Footer Stats -->
+<div style="background: #f8f9fa; padding: 30px 20px; margin-top: 50px;">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <h3 style="color: #667eea; font-weight: 700;">100%</h3>
+                <p style="color: #666;">Cloud Native</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <h3 style="color: #764ba2; font-weight: 700;">Real-time</h3>
+                <p style="color: #666;">Data Sync</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <h3 style="color: #667eea; font-weight: 700;">24/7</h3>
+                <p style="color: #666;">Available</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <h3 style="color: #764ba2; font-weight: 700;">∞</h3>
+                <p style="color: #666;">Scalable</p>
             </div>
         </div>
     </div>

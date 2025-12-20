@@ -12,8 +12,14 @@ class TicketCommentController extends Controller
 {
     public function __construct(private readonly TicketService $ticketService) {}
 
+    /**
+     * TAMBAH KOMENTAR DI TICKET
+     * - Customer bisa comment di ticket mereka
+     * - Admin/Agent bisa comment di semua ticket
+     */
     public function store(Request $request, string $ticket)
     {
+        // Validasi input
         $request->validate([
             'message' => 'required|string|max:2000',
         ]);
@@ -29,16 +35,17 @@ class TicketCommentController extends Controller
             return redirect()->route('login');
         }
 
-        // customer only on their own ticket; agent/admin can comment on any
+        // Cek permission: customer hanya di ticket mereka, agent/admin bisa semua
         if ((string)($ticketData['customer_id'] ?? '') !== (string)$user->id && !in_array($user->role, ['admin', 'agent'])) {
             abort(403);
         }
 
+        // Simpan komentar - PENTING: field database name-nya 'comment', bukan 'message'
         $this->ticketService->addComment($ticket, [
             'user_id' => $user->id,
             'user_name' => $user->name,
             'role' => $user->role,
-            'message' => $request->string('message')->toString(),
+            'comment' => $request->string('message')->toString(), // Form field: 'message', DB field: 'comment'
         ]);
 
         return redirect()->route('tickets.show', $ticket)->with('success', 'Komentar berhasil dikirim');

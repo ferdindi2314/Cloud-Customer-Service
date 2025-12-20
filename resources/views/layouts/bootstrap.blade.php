@@ -17,11 +17,11 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('tickets.index') }}">Tickets</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('tickets.*') ? 'active' : '' }}" href="{{ route('tickets.index') }}">Tiket</a></li>
                     @auth
                         @if(auth()->user()->role === 'admin')
-                        <li class="nav-item"><a class="nav-link" href="{{ route('admin.users.index') }}">Users</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('admin.users.index') }}">Pengguna</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('admin.categories.index') }}">Kategori</a></li>
                         @endif
                     @endauth
@@ -30,16 +30,25 @@
                 <ul class="navbar-nav ms-auto">
                     @auth
                         <li class="nav-item">
-                            <span class="navbar-text me-3">{{ auth()->user()->name }} ({{ auth()->user()->role }})</span>
+                            <span class="navbar-text me-3">{{ auth()->user()->name }}
+                                @php($role = auth()->user()->role)
+                                @if($role === 'admin')
+                                    <span class="badge text-bg-danger ms-2">admin</span>
+                                @elseif($role === 'agent')
+                                    <span class="badge text-bg-warning ms-2">agent</span>
+                                @else
+                                    <span class="badge text-bg-success ms-2">customer</span>
+                                @endif
+                            </span>
                         </li>
                         <li class="nav-item">
                             <form method="POST" action="{{ route('logout') }}" class="d-inline">
                                 @csrf
-                                <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
+                                <button class="btn btn-outline-light btn-sm" type="submit">Keluar</button>
                             </form>
                         </li>
                     @else
-                        <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Masuk</a></li>
                     @endauth
                 </ul>
             </div>

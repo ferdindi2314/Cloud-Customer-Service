@@ -13,7 +13,48 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    // ALUR DASHBOARD:
+    // 1. Ambil data user yang login
+    // 2. Hitung statistik tickets berdasarkan role
+    // 3. Tampilkan dashboard sesuai role (admin/agent/customer)
+
+    $user = auth()->user();
+    $role = $user->role;
+
+    // Statistik ticket berdasarkan status
+    $stats = [
+        'open' => 0,
+        'in_progress' => 0,
+        'resolved' => 0,
+        'closed' => 0,
+        'total' => 0
+    ];
+
+    if ($role === 'admin') {
+        // Admin lihat SEMUA tickets
+        $stats['open'] = \App\Models\Ticket::where('status', 'open')->count();
+        $stats['in_progress'] = \App\Models\Ticket::where('status', 'in_progress')->count();
+        $stats['resolved'] = \App\Models\Ticket::where('status', 'resolved')->count();
+        $stats['closed'] = \App\Models\Ticket::where('status', 'closed')->count();
+        $stats['total'] = \App\Models\Ticket::count();
+        $stats['unassigned'] = \App\Models\Ticket::whereNull('agent_id')->count();
+    } elseif ($role === 'agent') {
+        // Agent hanya lihat tickets yang DI-ASSIGN ke dia
+        $stats['open'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'open')->count();
+        $stats['in_progress'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'in_progress')->count();
+        $stats['resolved'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'resolved')->count();
+        $stats['closed'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'closed')->count();
+        $stats['total'] = \App\Models\Ticket::where('agent_id', $user->id)->count();
+    } else {
+        // Customer hanya lihat tickets MILIK dia
+        $stats['open'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'open')->count();
+        $stats['in_progress'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'in_progress')->count();
+        $stats['resolved'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'resolved')->count();
+        $stats['closed'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'closed')->count();
+        $stats['total'] = \App\Models\Ticket::where('customer_id', $user->id)->count();
+    }
+
+    return view('dashboard', compact('stats'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/firebase-test', function () {
