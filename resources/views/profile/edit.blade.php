@@ -1,29 +1,44 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('layouts.sidebar')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+@section('page-title', '👤 Edit Profile')
+@section('title', 'Edit Profile')
+
+@section('content')
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Informasi Akun</h5>
                     @include('profile.partials.update-profile-information-form')
                 </div>
             </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Password</h5>
                     @include('profile.partials.update-password-form')
                 </div>
             </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Hapus Akun</h5>
                     @include('profile.partials.delete-user-form')
                 </div>
             </div>
         </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="fw-semibold">Petunjuk</h6>
+                    <p class="small text-muted">
+                        Gunakan form di sebelah kiri untuk memperbarui profil dan password Anda. Menghapus akun bersifat permanen.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
-</x-app-layout>
+</div>
+@endsection

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Services\Firebase\UserService;
 
 class RegisteredUserController extends Controller
 {
@@ -31,7 +32,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -41,10 +42,23 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Attempt to save registration info to Firestore `users` collection.
+        try {
+            $firebase = new UserService();
+            $firebase->createUser([
+                'laravel_id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role ?? 'customer',
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('Failed to save user to Firestore: ' . $e->getMessage());
+        }
+
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        // Do not auto-login the user after registration.
+        // Redirect back to the register page and show a success alert with OK button.
+        return redirect(route('register'))->with('registered', true);
     }
 }

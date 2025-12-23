@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Category;
+use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Services\Firebase\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * TicketController - Controller untuk mengelola Tickets
- * 
+ *
  * ALUR SEDERHANA:
  * 1. Customer buat ticket (create/store)
  * 2. Admin lihat semua tickets & assign ke agent (index)
@@ -131,10 +133,43 @@ class TicketController extends Controller
             }
         }
 
+        // Generate temporary URLs for attachments that may be present in comments (evidence)
+        if (isset($comments) && is_array($comments)) {
+            foreach ($comments as &$c) {
+                if (isset($c['attachments']) && is_array($c['attachments'])) {
+                    foreach ($c['attachments'] as &$attc) {
+                        if (isset($attc['path']) && is_string($attc['path'])) {
+                            $attc['temp_url'] = $this->ticketService->getAttachmentTemporaryUrl($id, $attc['path']);
+                        }
+                    }
+                }
+            }
+            unset($c, $attc);
+        }
+
         // Ambil list agents untuk dropdown (admin only)
         $agents = [];
         if (Auth::user()->role === 'admin') {
             $agents = User::where('role', 'agent')->orderBy('name')->get();
+        }
+
+        // Ensure customer and agent names are available for the view
+        try {
+            if (empty($ticket['customer_name']) && !empty($ticket['customer_id'])) {
+                $u = User::find($ticket['customer_id']);
+                if ($u) {
+                    $ticket['customer_name'] = $u->name;
+                }
+            }
+
+            if (empty($ticket['agent_name']) && !empty($ticket['agent_id'])) {
+                $a = User::find($ticket['agent_id']);
+                if ($a) {
+                    $ticket['agent_name'] = $a->name;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore lookup failures - view will fallback to ids
         }
 
         return view('tickets.show', compact('ticket', 'comments', 'agents'));
@@ -220,10 +255,11 @@ class TicketController extends Controller
             return back()->with('error', 'User yang dipilih bukan agent.');
         }
 
-        // Update ticket: assign ke agent & ubah status jadi 'in_progress'
+        // Update ticket: assign to agent & set status to 'assigned'
+        // 'assigned' is a special status indicating admin assigned the ticket to an agent.
         $this->ticketService->updateTicket($id, [
-            'agent_id' => (int)$request->agent_id, // Field database: agent_id (bukan assigned_agent_id)
-            'status' => 'in_progress', // Auto ubah status jadi in_progress
+            'agent_id' => (int)$request->agent_id, // Field database: agent_id
+            'status' => 'assigned',
         ]);
 
         return back()->with('success', "Ticket berhasil ditugaskan ke {$agent->name}");
@@ -231,9 +267,100 @@ class TicketController extends Controller
 
     public function updateStatus(Request $request, string $id)
     {
+        // Basic validation for status field
         $request->validate([
-            'status' => 'required|in:open,in_progress,resolved,closed',
+            'status' => 'required|in:open,assigned,in_progress,resolved,closed',
         ]);
+
+        $user = Auth::user();
+
+        // Disallow reverting to 'open' once created/assigned
+        if ($request->status === 'open') {
+            return back()->with('error', 'Status tidak dapat dikembalikan ke Open.');
+        }
+
+        // Agents cannot set status to 'assigned'
+        if ($user && $user->role === 'agent' && $request->status === 'assigned') {
+            return back()->with('error', 'Agent tidak dapat mengubah status menjadi Assigned.');
+        }
+
+        // Load current status (from DB or Firestore)
+        $currentStatus = null;
+        try {
+            $found = $this->ticketService->findTicket($id);
+            if ($found instanceof \App\Models\Ticket) {
+                $currentStatus = $found->status;
+            } elseif (is_object($found) && method_exists($found, 'exists') && $found->exists()) {
+                $data = $found->data();
+                $currentStatus = $data['status'] ?? null;
+            }
+        } catch (\Throwable $e) {
+            // ignore and proceed - safety checks below will use null
+            $currentStatus = null;
+        }
+
+        // If ticket already closed, agents cannot change status at all
+        if ($user && $user->role === 'agent' && $currentStatus === 'closed') {
+            return back()->with('error', 'Ticket sudah ditutup; Anda tidak dapat mengubah status.');
+        }
+
+        // Business rules:
+        // - Admin cannot set ticket to 'in_progress' or 'resolved'. Admin may set 'assigned' or 'closed'.
+        // - Admin may set 'closed' only when current status is 'resolved' (agent resolved it first).
+        // - Agent may set 'in_progress' and 'resolved', but not 'assigned' or 'open'.
+        if ($user && $user->role === 'admin') {
+            if (in_array($request->status, ['in_progress', 'resolved'])) {
+                return back()->with('error', 'Admin tidak boleh mengubah status menjadi In Progress atau Resolved. Biarkan agent yang mengubahnya.');
+            }
+            if ($request->status === 'closed' && $currentStatus !== 'resolved') {
+                return back()->with('error', 'Hanya ticket yang sudah diselesaikan oleh agent (Resolved) yang dapat ditutup oleh admin.');
+            }
+        }
+
+        if ($user && $user->role === 'agent') {
+            if (in_array($request->status, ['assigned', 'open'])) {
+                return back()->with('error', 'Agent tidak dapat mengubah status menjadi Assigned atau Open.');
+            }
+            // Agent cannot directly close a ticket unless it is already marked as 'resolved'
+            if ($request->status === 'closed' && $currentStatus !== 'resolved') {
+                return back()->with('error', 'Agent tidak dapat menutup ticket secara langsung. Tandai sebagai Resolved terlebih dahulu.');
+            }
+        }
+
+        // Other roles are not allowed to change status
+        if ($user && !in_array($user->role, ['admin', 'agent'])) {
+            return back()->with('error', 'Anda tidak memiliki izin untuk mengubah status.');
+        }
+
+        // If agent is resolving, require evidence and note
+        if ($user && $user->role === 'agent' && $request->status === 'resolved') {
+            $request->validate([
+                'evidence_note' => 'required|string|max:2000',
+                'evidence.*' => 'required|file|max:5120',
+            ]);
+
+            // Upload evidence files
+            $files = $request->file('evidence', []);
+            $attachments = [];
+            if (is_array($files) && count($files) > 0) {
+                $attachments = $this->ticketService->uploadAttachments($files, $id);
+            }
+
+            // Create a public TicketComment recording the evidence and note
+            $ticketModel = Ticket::where('firebase_id', $id)->first();
+            $commentData = [
+                'ticket_id' => $ticketModel ? $ticketModel->id : null,
+                'user_id' => $user->id,
+                'comment' => $request->input('evidence_note'),
+                'attachments' => $attachments,
+                'is_internal' => false,
+            ];
+            try {
+                TicketComment::create($commentData);
+            } catch (\Throwable $e) {
+                logger()->warning('Failed to create evidence comment: ' . $e->getMessage());
+            }
+        }
 
         $this->ticketService->updateTicket($id, [
             'status' => $request->status,

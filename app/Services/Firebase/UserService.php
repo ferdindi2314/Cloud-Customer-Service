@@ -32,6 +32,23 @@ class UserService
     }
 
     /**
+     * Create a registration document in Firestore `register` collection.
+     * Returns the Firestore document id.
+     *
+     * @param array<string, mixed> $data
+     * @return string
+     */
+    public function createRegister(array $data): string
+    {
+        $now = new Timestamp(new \DateTime());
+        $data['created_at'] = $now;
+        $data['updated_at'] = $now;
+
+        $ref = $this->firestore->collection('register')->add($data);
+        return $ref->id();
+    }
+
+    /**
      * Find a Firestore user document by the Laravel user id stored in `laravel_id`.
      * Returns an array with 'id' and 'data' keys or null when not found.
      *

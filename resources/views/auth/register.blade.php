@@ -3,6 +3,14 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-6">
+        @if(session('registered'))
+        <div class="alert alert-success d-flex justify-content-between align-items-center" role="alert">
+            <div>Registrasi berhasil.</div>
+            <div>
+                <a href="{{ route('login') }}" class="btn btn-sm btn-success">OK</a>
+            </div>
+        </div>
+        @endif
         <div class="card">
             <div class="card-header">{{ __('Register') }}</div>
 

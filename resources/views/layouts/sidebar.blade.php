@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <style>
         * {
             margin: 0;
@@ -262,7 +262,7 @@
                     <span>Tiket</span>
                 </a>
             </li>
-            
+
             @auth
                 @if(auth()->user()->role === 'customer')
                     <li>
@@ -272,6 +272,14 @@
                         </a>
                     </li>
                 @endif
+
+                {{-- Edit Profile visible to all authenticated users --}}
+                <li>
+                    <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                        <i class="fas fa-user-edit"></i>
+                        <span>Edit Profile</span>
+                    </a>
+                </li>
 
                 @if(auth()->user()->role === 'admin')
                     <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
@@ -367,7 +375,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
+
     <script>
         function confirmLogout() {
             Swal.fire({
@@ -395,5 +403,6 @@
             });
         @endif
     </script>
+    @yield('scripts')
 </body>
 </html>

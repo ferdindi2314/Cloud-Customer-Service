@@ -138,6 +138,32 @@ class TicketService
 
         $ticketData = $snapshot->data();
         $ticketData['id'] = $snapshot->id();
+
+        // Load status history from subcollection tickets/{id}/status_history (if any)
+        try {
+            $historyDocs = $this->firestore->collection('tickets')->document($id)->collection('status_history')->documents();
+            $history = [];
+            foreach ($historyDocs as $h) {
+                if (!$h->exists()) continue;
+                $row = $h->data();
+                if (isset($row['changed_at']) && $row['changed_at'] instanceof Timestamp) {
+                    $row['changed_at_iso'] = Carbon::instance($row['changed_at']->get())->setTimezone('Asia/Jakarta')->toDateTimeString();
+                }
+                $row['id'] = $h->id();
+                $history[] = $row;
+            }
+
+            // sort ascending by changed_at_iso if available
+            usort($history, function ($a, $b) {
+                return strcmp((string)($a['changed_at_iso'] ?? ''), (string)($b['changed_at_iso'] ?? ''));
+            });
+
+            $ticketData['status_history'] = $history;
+        } catch (\Throwable $e) {
+            // ignore if unable to load history
+            $ticketData['status_history'] = [];
+        }
+
         return $this->normalizeTicket($ticketData);
     }
 
@@ -147,13 +173,59 @@ class TicketService
         $firebaseData = $data;
         $firebaseData['updated_at'] = $now;
 
+        // If status changed, record status change into subcollection 'status_history'
+        $previousStatus = null;
+        if (isset($data['status'])) {
+            try {
+                $snapshotPrev = $this->firestore->collection('tickets')->document($id)->snapshot();
+                if ($snapshotPrev && $snapshotPrev->exists()) {
+                    $dprev = $snapshotPrev->data();
+                    if (isset($dprev['status'])) {
+                        $previousStatus = $dprev['status'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                logger()->warning('Could not read previous ticket status: ' . $e->getMessage());
+            }
+        }
+
         // Update Firestore
         $this->firestore->collection('tickets')->document($id)->set($firebaseData, ['merge' => true]);
+
+        if (isset($data['status']) && $previousStatus !== $data['status']) {
+            try {
+                $this->firestore
+                    ->collection('tickets')
+                    ->document($id)
+                    ->collection('status_history')
+                    ->add(['status' => $data['status'], 'changed_at' => $now]);
+            } catch (\Throwable $e) {
+                logger()->error('Failed to save status history: ' . $e->getMessage());
+            }
+        }
 
         // Sync to Laravel DB
         $ticket = Ticket::where('firebase_id', $id)->first();
         if ($ticket) {
-            $ticket->update($data);
+            // Ensure any Firestore Timestamp objects are converted to Carbon for DB compatibility
+            $dbData = $data;
+            if (isset($dbData['updated_at']) && $dbData['updated_at'] instanceof Timestamp) {
+                try {
+                    $dbData['updated_at'] = Carbon::instance($dbData['updated_at']->get())->setTimezone('Asia/Jakarta');
+                } catch (\Throwable $e) {
+                    // Fallback to current time on conversion failure
+                    $dbData['updated_at'] = Carbon::now('Asia/Jakarta');
+                }
+            }
+            if (isset($dbData['created_at']) && $dbData['created_at'] instanceof Timestamp) {
+                try {
+                    $dbData['created_at'] = Carbon::instance($dbData['created_at']->get())->setTimezone('Asia/Jakarta');
+                } catch (\Throwable $e) {
+                    $dbData['created_at'] = Carbon::now('Asia/Jakarta');
+                }
+            }
+
+            $ticket->update($dbData);
         }
     }
 
@@ -216,6 +288,23 @@ class TicketService
                     'size' => $file->getSize(),
                     'storage' => 'firebase',
                 ];
+                // Save metadata to Firestore attachments collection
+                try {
+                    $meta = [
+                        'ticket_id' => $ticketId,
+                        'name' => $filename,
+                        'path' => $objectName,
+                        'content_type' => $file->getClientMimeType(),
+                        'size' => $file->getSize(),
+                        'storage' => 'firebase',
+                    ];
+                    $now = new Timestamp(Carbon::now('Asia/Jakarta'));
+                    $meta['created_at'] = $now;
+                    $meta['updated_at'] = $now;
+                    $this->firestore->collection('attachments')->add($meta);
+                } catch (\Throwable $e) {
+                    logger()->error('Failed to save firebase attachment metadata: ' . $e->getMessage());
+                }
             } else {
                 // store locally on configured disk
                 try {
@@ -228,6 +317,23 @@ class TicketService
                         'size' => $file->getSize(),
                         'storage' => 'local',
                     ];
+                    // Save metadata to Firestore attachments collection
+                    try {
+                        $meta = [
+                            'ticket_id' => $ticketId,
+                            'name' => $filename,
+                            'path' => $storedPath,
+                            'content_type' => $file->getClientMimeType(),
+                            'size' => $file->getSize(),
+                            'storage' => 'local',
+                        ];
+                        $now = new Timestamp(Carbon::now('Asia/Jakarta'));
+                        $meta['created_at'] = $now;
+                        $meta['updated_at'] = $now;
+                        $this->firestore->collection('attachments')->add($meta);
+                    } catch (\Throwable $e) {
+                        logger()->error('Failed to save local attachment metadata: ' . $e->getMessage());
+                    }
                 } catch (\Throwable $e) {
                     logger()->error('Failed to store attachment locally: ' . $e->getMessage());
                     continue;
@@ -368,7 +474,7 @@ class TicketService
      */
     private function ticketToArray(Ticket $ticket): array
     {
-        return [
+        $result = [
             'id' => $ticket->firebase_id ?? $ticket->id,
             'title' => $ticket->title,
             'description' => $ticket->description,
@@ -384,6 +490,29 @@ class TicketService
             'created_at_iso' => $ticket->created_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
             'updated_at_iso' => $ticket->updated_at->setTimezone('Asia/Jakarta')->toDateTimeString(),
         ];
+
+        // Try to load status history from Firestore if available
+        try {
+            $historyDocs = $this->firestore->collection('tickets')->document($result['id'])->collection('status_history')->documents();
+            $history = [];
+            foreach ($historyDocs as $h) {
+                if (!$h->exists()) continue;
+                $row = $h->data();
+                if (isset($row['changed_at']) && $row['changed_at'] instanceof Timestamp) {
+                    $row['changed_at_iso'] = Carbon::instance($row['changed_at']->get())->setTimezone('Asia/Jakarta')->toDateTimeString();
+                }
+                $row['id'] = $h->id();
+                $history[] = $row;
+            }
+            usort($history, function ($a, $b) {
+                return strcmp((string)($a['changed_at_iso'] ?? ''), (string)($b['changed_at_iso'] ?? ''));
+            });
+            $result['status_history'] = $history;
+        } catch (\Throwable $e) {
+            $result['status_history'] = [];
+        }
+
+        return $result;
     }
 
     /**
