@@ -1,145 +1,235 @@
 @extends('layouts.bootstrap')
 
-@section('title', 'Electronic Service - Dashboard')
+@section('title', 'Cloud Ticketing System - Modern Customer Support')
 
 @section('content')
-<!-- Hero Section -->
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; border-radius: 10px; margin-bottom: 50px;">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-7">
-                <h1 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 20px;">🔧 Electronic Service Center</h1>
-                <p style="font-size: 1.3rem; margin-bottom: 30px; line-height: 1.8; opacity: 0.95;">
-                    Platform layanan purna jual & perbaikan perangkat elektronik berbasis cloud. Kelola ticket service, status garansi, sparepart, dan penugasan teknisi dengan cepat dan transparan.
+<style>
+    /* Landing only */
+    body { overflow-x: hidden; }
+
+    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 100px 20px; position: relative; overflow: hidden; min-height: 600px; display: flex; align-items: center; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,106.7C1248,96,1344,96,1392,96L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom; background-size: cover; }
+    .feature-card { border: none; border-radius: 20px; padding: 30px; height: 100%; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; }
+    .feature-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+    .feature-icon { width: 70px; height: 70px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; }
+    .stat-box { text-align: center; padding: 30px; border-radius: 16px; background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    .cta-section { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 80px 20px; border-radius: 30px; margin: 60px 0; }
+    .btn-modern { border-radius: 12px; padding: 14px 32px; font-weight: 600; transition: all 0.3s; border: none; }
+    .btn-modern:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .process-step { text-align: center; padding: 20px; }
+    .process-number { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin: 0 auto 20px; }
+    
+    /* Responsive hero */
+    @media (max-width: 992px) {
+        .hero { padding: 80px 20px; min-height: 500px; }
+        .hero h1 { font-size: 2.5rem !important; }
+        .hero p { font-size: 1rem !important; }
+    }
+    
+    @media (max-width: 768px) {
+        .hero { padding: 60px 15px; min-height: auto; text-align: center; }
+        .hero h1 { font-size: 2rem !important; text-align: center; }
+        .hero p { font-size: 0.95rem !important; text-align: center; }
+        .hero .row { justify-content: center; }
+        .hero .col-lg-6:first-child { order: 1; }
+        .hero .col-lg-6:last-child { order: 2; margin-top: 20px; }
+        .d-flex.gap-3 { justify-content: center; }
+        .feature-card { margin-bottom: 20px; }
+        .stat-box { margin-bottom: 20px; }
+        .cta-section { padding: 50px 20px; margin: 40px 0; }
+    }
+    
+    @media (max-width: 576px) {
+        .hero { padding: 40px 10px; }
+        .hero h1 { font-size: 1.75rem !important; }
+        .hero .col-lg-6:last-child div { font-size: 8rem !important; }
+        .btn-modern { padding: 12px 24px; font-size: 14px; width: 100%; }
+        .d-flex.gap-3 { flex-direction: column; gap: 10px !important; }
+    }
+</style>
+
+{{-- Hero Section --}}
+<div class="container-fluid px-0 hero">
+    <div class="container" style="position: relative; z-index: 1;">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-lg-6 col-md-8 mb-5 mb-lg-0">
+                <h1 style="font-size: 3.2rem; font-weight: 800; margin-bottom: 20px; line-height: 1.2;">
+                    Customer Support<br>Jadi Lebih <span style="color: #fbbf24;">Mudah</span>
+                </h1>
+                <p style="font-size: 1.15rem; margin-bottom: 28px; opacity: 0.95; line-height: 1.8;">
+                    Platform modern untuk mengelola tiket layanan pelanggan. Real-time, efisien, dan mudah digunakan.
                 </p>
                 <div class="d-flex flex-wrap gap-3">
                     @guest
-                        <a href="{{ route('login') }}" class="btn btn-light btn-lg fw-bold">🔐 Masuk Sekarang</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg fw-bold">📝 Daftar Akun</a>
-                        @endif
+                        <a href="{{ route('register') }}" class="btn btn-light btn-lg btn-modern">
+                            🚀 Mulai Gratis
+                        </a>
+                        <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg btn-modern">
+                            🔐 Masuk
+                        </a>
                     @else
-                        <a href="{{ route('tickets.index') }}" class="btn btn-light btn-lg fw-bold">🎫 Lihat Tiket</a>
-                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-light btn-lg fw-bold">Keluar</button>
-                        </form>
+                        <a href="{{ route('tickets.index') }}" class="btn btn-light btn-lg btn-modern">
+                            📋 Dashboard
+                        </a>
                     @endguest
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <div style="font-size: 13rem; opacity: 0.9;">🎫</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-    <!-- Minimal Dashboard Cards -->
-    <div class="container mb-5">
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Ticket Aktif</h6>
-                        <div class="d-flex align-items-baseline gap-2">
-                            <span style="font-size: 2rem; font-weight: 700; color: #667eea;">Live</span>
-                            <small class="text-muted">monitor langsung</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Teknisi</h6>
-                        <div class="d-flex align-items-baseline gap-2">
-                            <span style="font-size: 2rem; font-weight: 700; color: #764ba2;">Ready</span>
-                            <small class="text-muted">penugasan otomatis</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Sparepart</h6>
-                        <div class="d-flex align-items-baseline gap-2">
-                            <span style="font-size: 2rem; font-weight: 700; color: #12b981;">Terkontrol</span>
-                            <small class="text-muted">tracking kebutuhan</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h6 class="text-muted text-uppercase" style="letter-spacing: 0.06em; font-size: 0.8rem;">Garansi</h6>
-                        <div class="d-flex align-items-baseline gap-2">
-                            <span style="font-size: 2rem; font-weight: 700; color: #f59e0b;">Terpantau</span>
-                            <small class="text-muted">validasi cepat</small>
-                        </div>
-                    </div>
-                </div>
+
+{{-- Features Section --}}
+<div class="container my-5 py-5">
+    <div class="text-center mb-5">
+        <h2 style="font-size: 2.3rem; font-weight: 700; margin-bottom: 12px;">✨ Fitur Unggulan</h2>
+        <p class="text-muted" style="font-size: 1.05rem;">Semua yang Anda butuhkan untuk customer support yang efektif</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">⚡</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Real-Time Sync</h4>
+                <p class="text-muted">Semua update tersimpan otomatis di cloud. Akses dari mana saja, kapan saja.</p>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">👥</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Multi-Role</h4>
+                <p class="text-muted">Admin, Agent, dan Customer - masing-masing punya akses sesuai kebutuhan.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">📊</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Analytics</h4>
+                <p class="text-muted">Dashboard lengkap dengan statistik dan insight untuk keputusan yang lebih baik.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #34d399, #10b981);">💬</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Comment System</h4>
+                <p class="text-muted">Komunikasi dua arah yang jelas antara customer dan support team.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);">📎</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">File Attachments</h4>
+                <p class="text-muted">Upload screenshot, dokumen, atau file apapun untuk memperjelas masalah.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #a78bfa, #8b5cf6);">🔔</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Status Tracking</h4>
+                <p class="text-muted">Pantau progres tiket dari Open sampai Closed dengan timeline yang jelas.</p>
+            </div>
+        </div>
+    </div>
+</div>
 
+{{-- Process Section --}}
+<div class="container my-5 py-5">
+    <div class="text-center mb-5">
+        <h2 style="font-size: 2.3rem; font-weight: 700; margin-bottom: 12px;">🚀 Cara Kerja</h2>
+        <p class="text-muted" style="font-size: 1.05rem;">Hanya 4 langkah sederhana</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-3 col-6">
+            <div class="process-step">
+                <div class="process-number">1</div>
+                <h5 style="font-weight: 700; margin-bottom: 12px;">Buat Tiket</h5>
+                <p class="text-muted small">Customer membuat tiket dengan deskripsi masalah</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="process-step">
+                <div class="process-number">2</div>
+                <h5 style="font-weight: 700; margin-bottom: 12px;">Assign Agent</h5>
+                <p class="text-muted small">Admin menugaskan tiket ke agent yang sesuai</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="process-step">
+                <div class="process-number">3</div>
+                <h5 style="font-weight: 700; margin-bottom: 12px;">Proses</h5>
+                <p class="text-muted small">Agent menangani dan update progress tiket</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="process-step">
+                <div class="process-number">4</div>
+                <h5 style="font-weight: 700; margin-bottom: 12px;">Selesai</h5>
+                <p class="text-muted small">Tiket ditutup setelah masalah terselesaikan</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Stats Section --}}
+<div class="container-fluid px-0" style="background: #f8fafc; padding: 60px 20px; margin: 60px 0;">
+    <div class="container">
         <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3">Operasional Layanan</h5>
-                        <p class="text-muted mb-4" style="line-height: 1.7;">Pantau antrean service, update status, dan komunikasikan progres ke pelanggan secara real-time.</p>
-                        <div class="d-flex flex-wrap gap-3">
-                            <div class="px-3 py-2 rounded" style="background:#f3f4ff; color:#4f46e5; font-weight:600;">📥 Intake Ticket</div>
-                            <div class="px-3 py-2 rounded" style="background:#fdf2f8; color:#db2777; font-weight:600;">🛠️ Diagnosa & Sparepart</div>
-                            <div class="px-3 py-2 rounded" style="background:#ecfdf3; color:#047857; font-weight:600;">📦 Proses & Uji</div>
-                            <div class="px-3 py-2 rounded" style="background:#fff7ed; color:#c2410c; font-weight:600;">✅ Selesai & Serah</div>
-                        </div>
-                    </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box">
+                    <h2 style="color: #667eea; font-weight: 700; font-size: 3rem; margin-bottom: 8px;">100%</h2>
+                    <p class="text-muted mb-0">Cloud-Based</p>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="card h-100" style="border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3">Quick Actions</h5>
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('tickets.index') }}" class="btn btn-primary btn-lg">🎫 Lihat Ticket</a>
-                            <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary btn-lg">➕ Ticket Baru</a>
-                            <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary">📊 Monitoring Layanan</a>
-                        </div>
-                    </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box">
+                    <h2 style="color: #f093fb; font-weight: 700; font-size: 3rem; margin-bottom: 8px;">24/7</h2>
+                    <p class="text-muted mb-0">Availability</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box">
+                    <h2 style="color: #10b981; font-weight: 700; font-size: 3rem; margin-bottom: 8px;">∞</h2>
+                    <p class="text-muted mb-0">Scalable</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-box">
+                    <h2 style="color: #f59e0b; font-weight: 700; font-size: 3rem; margin-bottom: 8px;">Fast</h2>
+                    <p class="text-muted mb-0">Response Time</p>
                 </div>
             </div>
         </div>
     </div>
-    <!-- CTA Section -->
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px 30px; border-radius: 10px; text-align: center; margin-top: 50px;">
-        <h2 style="font-size: 2rem; margin-bottom: 20px;">Siap Menggunakan Electronic Service?</h2>
-        <p style="font-size: 1.1rem; margin-bottom: 30px; opacity: 0.95;">Implementasikan service center berbasis cloud dengan proses terukur, transparan, dan scalable</p>
+</div>
+
+{{-- CTA Section --}}
+<div class="container">
+    <div class="cta-section text-center">
+        <h2 style="font-size: 2.3rem; font-weight: 800; margin-bottom: 16px;">Siap Meningkatkan Layanan Anda?</h2>
+        <p style="font-size: 1.1rem; margin-bottom: 32px; opacity: 0.95;">
+            Bergabung dengan ribuan perusahaan yang sudah menggunakan platform kami
+        </p>
         <div class="d-flex justify-content-center flex-wrap gap-3">
             @guest
-                <a href="{{ route('login') }}" class="btn btn-light btn-lg fw-bold">🔐 Masuk Sekarang</a>
+                <a href="{{ route('register') }}" class="btn btn-light btn-lg btn-modern" style="background: white; color: #f5576c;">
+                    🚀 Daftar Sekarang
+                </a>
+                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg btn-modern">
+                    🔐 Masuk
+                </a>
             @else
-                <a href="{{ route('tickets.index') }}" class="btn btn-light btn-lg fw-bold">🎫 Lihat Tiket</a>
+                <a href="{{ route('tickets.create') }}" class="btn btn-light btn-lg btn-modern" style="background: white; color: #f5576c;">
+                    ➕ Buat Tiket Baru
+                </a>
+                <a href="{{ route('tickets.index') }}" class="btn btn-outline-light btn-lg btn-modern">
+                    📋 Lihat Tiket
+                </a>
             @endguest
-        </div>
-    </div>
-<!-- Footer Stats -->
-<div style="background: #f8f9fa; padding: 30px 20px; margin-top: 50px;">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-md-3 mb-3">
-                <h3 style="color: #667eea; font-weight: 700;">100%</h3>
-                <p style="color: #666;">Cloud Native</p>
-            </div>
-            <div class="col-md-3 mb-3">
-                <h3 style="color: #764ba2; font-weight: 700;">Real-time</h3>
-                <p style="color: #666;">Data Sync</p>
-            </div>
-            <div class="col-md-3 mb-3">
-                <h3 style="color: #667eea; font-weight: 700;">24/7</h3>
-                <p style="color: #666;">Available</p>
-            </div>
-            <div class="col-md-3 mb-3">
-                <h3 style="color: #764ba2; font-weight: 700;">∞</h3>
-                <p style="color: #666;">Scalable</p>
-            </div>
         </div>
     </div>
 </div>

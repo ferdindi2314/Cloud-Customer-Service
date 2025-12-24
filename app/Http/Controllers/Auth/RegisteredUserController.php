@@ -57,8 +57,7 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        // Do not auto-login the user after registration.
-        // Redirect back to the register page and show a success alert with OK button.
-        return redirect(route('register'))->with('registered', true);
+        // Do not auto-login. Redirect user to login page after successful registration.
+        return redirect()->route('login')->with('success', 'Pendaftaran berhasil. Silakan masuk.');
     }
 }

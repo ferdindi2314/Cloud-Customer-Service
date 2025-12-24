@@ -234,6 +234,34 @@ class TicketController extends Controller
 
     public function destroy(string $id)
     {
+        $ticket = $this->ticketService->getTicket($id);
+        if (!$ticket) {
+            abort(404);
+        }
+
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // Admin bisa hapus tiket dengan status apapun
+        if ($user->role === 'admin') {
+            $this->ticketService->deleteTicket($id);
+            return redirect()->route('tickets.index')->with('success', 'Ticket berhasil dihapus');
+        }
+
+        // Customer hanya bisa hapus tiket mereka sendiri dan hanya jika status masih 'open'
+        if ((string)($ticket['customer_id'] ?? '') !== (string)$user->id) {
+            return redirect()->route('tickets.show', $id)
+                ->with('error', 'Anda tidak bisa menghapus ticket orang lain.');
+        }
+
+        if (($ticket['status'] ?? 'open') !== 'open') {
+            return redirect()->route('tickets.show', $id)
+                ->with('error', 'Ticket yang sudah diproses tidak bisa dihapus.');
+        }
+
         $this->ticketService->deleteTicket($id);
         return redirect()->route('tickets.index')->with('success', 'Ticket berhasil dihapus');
     }

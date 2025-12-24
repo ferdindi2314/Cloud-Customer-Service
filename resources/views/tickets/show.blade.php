@@ -5,6 +5,138 @@
 @section('title', 'Detail Tiket')
 
 @section('content')
+<style>
+    .pill { border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: .85rem; }
+    .panel { border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); }
+    .panel-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 700; letter-spacing: .01em; }
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before { content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px; background: #e5e7eb; }
+    .timeline-item { position: relative; padding: 10px 0 10px 12px; }
+    .timeline-item::before { content: ''; position: absolute; left: -16px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 4px #e0e7ff; }
+    .attachment-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 12px; }
+    .comment { border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px; background: #fff; box-shadow: 0 6px 16px rgba(15,23,42,0.05); }
+    .comment-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#2563eb,#7c3aed); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+    .badge-role { font-size: .75rem; }
+    .comment-body { background: #f8fafc; border-radius: 10px; padding: 10px 12px; }
+    
+    /* Responsive styles */
+    @media (max-width: 992px) {
+        .col-lg-8, .col-lg-4 {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .d-flex.gap-2 {
+            flex-wrap: wrap;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 0;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .d-flex.gap-2, .d-flex.gap-3 {
+            flex-direction: column;
+            width: 100%;
+            gap: 8px !important;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+        
+        .panel {
+            border-radius: 10px;
+        }
+        
+        .row.g-3 {
+            gap: 10px 0;
+        }
+        
+        .col-md-6 {
+            width: 100%;
+        }
+        
+        h1.h3 {
+            font-size: 1.25rem;
+        }
+        
+        .attachment-card {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .attachment-card .text-truncate {
+            max-width: 100% !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .pill {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+        }
+        
+        .comment-meta {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+        
+        .panel-header {
+            font-size: 14px;
+            padding: 10px 12px;
+        }
+        
+        .btn-sm {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+        
+        textarea {
+            font-size: 14px;
+        }
+        
+        .container-fluid {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        
+        .d-flex.align-items-center.gap-3 {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 10px !important;
+        }
+        
+        .card {
+            margin-bottom: 15px;
+        }
+        
+        .card-body {
+            padding: 12px;
+        }
+        
+        h1.h3 {
+            font-size: 1.1rem;
+        }
+    }
+</style>
 <div class="container-fluid">
 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
     <div>
@@ -49,104 +181,79 @@
         @endif
         {{-- Admin atau customer bisa hapus --}}
         @if(auth()->user()->role === 'admin' || ($ticket['customer_id'] ?? null) === auth()->id())
-            <form method="POST" action="{{ route('tickets.destroy', $ticket['id']) }}" onsubmit="return confirm('Hapus ticket ini?')" class="d-inline-block ms-1">
-                @csrf
-                @method('DELETE')
-                <button class="btn btn-danger btn-sm" type="submit">🗑️ Hapus</button>
-            </form>
+            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteTicket('{{ route('tickets.destroy', $ticket['id']) }}', '{{ $ticket['status'] ?? 'open' }}')">🗑️ Hapus</button>
         @endif
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Rincian Tiket</h5>
-
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Kategori</dt>
-                    <dd class="col-sm-8">{{ $ticket['category'] ?? '-' }}</dd>
-
-                    <dt class="col-sm-4 text-muted">Prioritas</dt>
-                    <dd class="col-sm-8">
-                        @php
-                            $prio = $ticket['priority'] ?? '-';
-                        @endphp
-                        <span class="badge text-bg-{{ $priorityColors[$prio] ?? 'secondary' }}">{{ ucfirst($prio) }}</span>
-                    </dd>
-
-                    <dt class="col-sm-4 text-muted">Status</dt>
-                    <dd class="col-sm-8">
-                        @php
-                            $stat = $ticket['status'] ?? 'open';
-                        @endphp
-                        <span class="badge text-bg-{{ $statusColors[$stat] ?? 'secondary' }}">{{ ucfirst(str_replace('_', ' ', $stat)) }}</span>
-                    </dd>
-
-                    <dt class="col-sm-4 text-muted">Pelanggan</dt>
-                    <dd class="col-sm-8">{{ $ticket['customer_name'] ?? '-' }}</dd>
-
-                    <dt class="col-sm-4 text-muted">Agent Ditugaskan</dt>
-                    <dd class="col-sm-8">@if(!empty($ticket['agent_name'])){{ $ticket['agent_name'] }}@elseif(!empty($ticket['agent_id']))Agent #{{ $ticket['agent_id'] }}@else-@endif</dd>
-                </dl>
-
-                <hr>
-
-                <h6 class="fw-semibold">Deskripsi</h6>
+        <div class="panel mb-3">
+            <div class="panel-header">Rincian Tiket</div>
+            <div class="p-3">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="small text-muted">Kategori</div>
+                        <div class="fw-semibold">{{ $ticket['category'] ?? '-' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Prioritas</div>
+                        @php $prio = $ticket['priority'] ?? '-'; @endphp
+                        <span class="pill bg-{{ $priorityColors[$prio] ?? 'secondary' }} text-white">{{ ucfirst($prio) }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Status</div>
+                        @php $stat = $ticket['status'] ?? 'open'; @endphp
+                        <span class="pill bg-{{ $statusColors[$stat] ?? 'secondary' }} text-white">{{ ucfirst(str_replace('_',' ',$stat)) }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Agent Ditugaskan</div>
+                        <div class="fw-semibold">@if(!empty($ticket['agent_name'])){{ $ticket['agent_name'] }}@elseif(!empty($ticket['agent_id']))Agent #{{ $ticket['agent_id'] }}@else-@endif</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">Pelanggan</div>
+                        <div class="fw-semibold">{{ $ticket['customer_name'] ?? '-' }}</div>
+                    </div>
+                </div>
+                <div class="small text-muted mb-1">Deskripsi</div>
                 <div class="border rounded p-3 bg-light" style="white-space: pre-wrap;">{{ $ticket['description'] ?? '-' }}</div>
             </div>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header">Tracking Status</div>
-            <div class="card-body">
+        <div class="panel mb-3">
+            <div class="panel-header">Tracking Status</div>
+            <div class="p-3">
                 @php
                     $history = $ticket['status_history'] ?? [];
-                    if (!is_array($history)) {
-                        $history = [];
-                    }
-
-                    // Ensure we always show an initial 'open' entry (ticket creation)
+                    if (!is_array($history)) { $history = []; }
                     $displayHistory = $history;
-                    $hasOpen = false;
-                    foreach ($displayHistory as $h) {
-                        if (isset($h['status']) && $h['status'] === 'open') {
-                            $hasOpen = true;
-                            break;
-                        }
-                    }
-                    if (!$hasOpen) {
-                        array_unshift($displayHistory, ['status' => 'open', 'changed_at_iso' => $ticket['created_at_iso'] ?? '-']);
-                    }
+                    $hasOpen = collect($displayHistory)->contains(fn($h) => ($h['status'] ?? '') === 'open');
+                    if (!$hasOpen) array_unshift($displayHistory, ['status' => 'open', 'changed_at_iso' => $ticket['created_at_iso'] ?? '-']);
                 @endphp
-
-                <ul class="list-group list-group-flush">
+                <div class="timeline">
                     @foreach($displayHistory as $h)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>{{ ucfirst(str_replace('_', ' ', $h['status'] ?? '-')) }}</strong>
-                            </div>
+                        <div class="timeline-item d-flex justify-content-between align-items-start gap-2">
+                            <div class="fw-semibold">{{ ucfirst(str_replace('_', ' ', $h['status'] ?? '-')) }}</div>
                             <div class="text-muted small">{{ $h['changed_at_iso'] ?? ($ticket['created_at_iso'] ?? '') }}</div>
-                        </li>
+                        </div>
                     @endforeach
-                </ul>
+                </div>
             </div>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header">Lampiran</div>
-            <div class="card-body">
+        <div class="panel mb-3">
+            <div class="panel-header">Lampiran</div>
+            <div class="p-3">
                 @if(isset($ticket['attachments']) && is_array($ticket['attachments']) && count($ticket['attachments']) > 0)
-                    <div class="list-group list-group-flush">
+                    <div class="row g-2">
                         @foreach($ticket['attachments'] as $att)
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div class="text-truncate" style="max-width:70%">{{ $att['name'] ?? ($att['path'] ?? 'file') }}</div>
-                                <div>
+                            <div class="col-md-6">
+                                <div class="attachment-card d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate" style="max-width:65%">{{ $att['name'] ?? ($att['path'] ?? 'file') }}</div>
                                     @if(!empty($att['temp_url']))
                                         <a class="btn btn-sm btn-outline-primary" href="{{ $att['temp_url'] }}" target="_blank" rel="noopener">Download</a>
                                     @else
-                                        <span class="text-muted small">(URL tidak tersedia)</span>
+                                        <span class="text-muted small">N/A</span>
                                     @endif
                                 </div>
                             </div>
@@ -158,32 +265,35 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header d-flex align-items-center gap-2">
+        <div class="panel">
+            <div class="panel-header d-flex align-items-center gap-2">
                 <span>💬 Komentar & Diskusi</span>
                 <span class="badge bg-secondary ms-auto">{{ isset($comments) && is_array($comments) ? count($comments) : 0 }}</span>
             </div>
-            <div class="card-body">
+            <div class="p-3">
                 @if(isset($comments) && is_array($comments) && count($comments) > 0)
                     <div class="mb-4">
                         @foreach($comments as $c)
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                    <div>
-                                        <span class="fw-semibold">{{ $c['user_name'] ?? 'User' }}</span>
-                                        @if(isset($c['user_role']))
-                                            @if($c['user_role'] === 'admin')
-                                                <span class="badge bg-danger text-white ms-1">Admin</span>
-                                            @elseif($c['user_role'] === 'agent')
-                                                <span class="badge bg-warning text-dark ms-1">Agent</span>
-                                            @else
-                                                <span class="badge bg-success text-white ms-1">Customer</span>
+                            <div class="comment mb-3">
+                                <div class="comment-meta mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar">{{ strtoupper(substr($c['user_name'] ?? 'U',0,1)) }}</div>
+                                        <div>
+                                            <div class="fw-semibold mb-0">{{ $c['user_name'] ?? 'User' }}</div>
+                                            @if(isset($c['user_role']))
+                                                @if($c['user_role'] === 'admin')
+                                                    <span class="badge bg-danger badge-role">Admin</span>
+                                                @elseif($c['user_role'] === 'agent')
+                                                    <span class="badge bg-warning text-dark badge-role">Agent</span>
+                                                @else
+                                                    <span class="badge bg-success badge-role">Customer</span>
+                                                @endif
                                             @endif
-                                        @endif
+                                        </div>
                                     </div>
                                     <div class="text-muted small">{{ $c['created_at_iso'] ?? '' }}</div>
                                 </div>
-                                <div class="border rounded p-2 bg-white" style="white-space: pre-wrap;">{{ $c['comment'] ?? $c['message'] ?? '(tidak ada komentar)' }}</div>
+                                <div class="comment-body" style="white-space: pre-wrap;">{{ $c['comment'] ?? $c['message'] ?? '(tidak ada komentar)' }}</div>
                                 @if(isset($c['attachments']) && is_array($c['attachments']) && count($c['attachments']) > 0)
                                     <div class="mt-2">
                                         <strong>Bukti / Lampiran:</strong>
@@ -213,7 +323,6 @@
                     </div>
                 @endif
 
-                {{-- Form Tambah Komentar --}}
                 <div class="border-top pt-3">
                     <form method="POST" action="{{ route('tickets.comments.store', $ticket['id']) }}">
                         @csrf
@@ -410,4 +519,71 @@
     </div>
 </div>
 </div>
+
+<form id="deleteTicketForm" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+@endsection
+
+@section('scripts')
+<script>
+function confirmDeleteTicket(url, status) {
+    const role = '{{ auth()->user()->role }}';
+    
+    // Admin bisa hapus tiket dengan status apapun
+    if (role === 'admin') {
+        Swal.fire({
+            title: '🗑️ Hapus Tiket',
+            html: 'Apakah Anda yakin ingin menghapus tiket ini?<br><small class="text-muted">Status: <strong>' + (status ? status.replace(/_/g, ' ') : 'open') + '</strong></small><br><small class="text-danger">Tindakan ini tidak dapat dibatalkan.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-4',
+                confirmButton: 'btn btn-danger px-4',
+                cancelButton: 'btn btn-secondary px-4'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('deleteTicketForm');
+                form.action = url;
+                form.submit();
+            }
+        });
+    } else {
+        // Customer hanya bisa hapus tiket dengan status open
+        if (status === 'open') {
+            Swal.fire({
+                title: 'Yakin ingin menghapus tiket ini?',
+                text: 'Tindakan ini tidak dapat dibatalkan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('deleteTicketForm');
+                    form.action = url;
+                    form.submit();
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'info',
+                title: 'Tidak dapat dihapus',
+                html: 'Ticket tidak dapat dihapus karena status saat ini: <strong>' + (status ? status.replace(/_/g, ' ') : 'open') + '</strong>',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
+}
+</script>
 @endsection

@@ -7,11 +7,27 @@
     <title>@yield('title', config('app.name', 'Cloud Ticketing'))</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        .navbar-modern {
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+        }
+        .navbar-modern .nav-link.active {
+            font-weight: 600;
+        }
+        footer.site-footer {
+            background: #0f172a;
+            color: rgba(255,255,255,0.85);
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        footer.site-footer a { color: #93c5fd; text-decoration: none; }
+        footer.site-footer a:hover { color: #bfdbfe; }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-modern shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">Cloud Ticketing</a>
+            <a class="navbar-brand fw-bold" href="{{ route('home') }}">☁️ CloudTicket</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -44,11 +60,11 @@
                         <li class="nav-item">
                             <form method="POST" action="{{ route('logout') }}" class="d-inline">
                                 @csrf
-                                <button class="btn btn-outline-light btn-sm" type="submit">Keluar</button>
+                                <button class="btn btn-light btn-sm" type="submit">Keluar</button>
                             </form>
                         </li>
                     @else
-                        <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Masuk</a></li>
+                        <li class="nav-item"><a class="btn btn-light btn-sm" href="{{ route('login') }}">Masuk</a></li>
                     @endauth
                 </ul>
             </div>
@@ -65,6 +81,23 @@
 
         @yield('content')
     </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="fw-semibold">☁️ CloudTicket</div>
+                    <div class="text-white-50">Modern Customer Support Platform</div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <a href="{{ route('home') }}" class="me-3">Beranda</a>
+                    <a href="{{ route('login') }}" class="me-3">Masuk</a>
+                    <a href="{{ route('register') }}">Daftar</a>
+                    <div class="text-white-50 mt-2">&copy; {{ date('Y') }} CloudTicket. All rights reserved.</div>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
