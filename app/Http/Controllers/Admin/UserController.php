@@ -114,10 +114,15 @@ class UserController extends Controller
             logger()->error('Failed to update user in Firestore: ' . $e->getMessage());
         }
 
+<<<<<<< HEAD
         // Tetap di halaman yang sedang diedit agar alur kerja lebih cepat
         // Sertakan query role jika ada agar konteks daftar tetap konsisten saat kembali
         $role = $request->input('role', $user->role);
         return redirect()->route('admin.users.edit', $user)->with('success', 'User berhasil diperbarui');
+=======
+        // Redirect back to the management list for the (possibly updated) role
+        return redirect()->route('admin.users.index', ['role' => $data['role']])->with('success', 'User berhasil diperbarui');
+>>>>>>> 63c996fe8999b6ba9d8dfca94b2bda357c8e6aed
     }
 
     public function destroy(User $user, UserService $userService)
