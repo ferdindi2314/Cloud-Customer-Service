@@ -266,7 +266,7 @@
             @auth
                 @if(auth()->user()->role === 'customer')
                     <li>
-                        <a href="{{ route('tickets.create') }}" class="nav-link">
+                        <a href="{{ route('tickets.create') }}" class="nav-link {{ request()->routeIs('tickets.create') ? 'active' : '' }}">
                             <i class="fas fa-plus-circle"></i>
                             <span>Buat Tiket</span>
                         </a>
@@ -283,25 +283,25 @@
 
                 @if(auth()->user()->role === 'admin')
                     <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
-                        <a href="{{ route('admin.users.index', ['role' => 'admin']) }}" class="nav-link">
+                        <a href="{{ route('admin.users.index', ['role' => 'admin']) }}" class="nav-link {{ request()->routeIs('admin.users.*') && request('role') === 'admin' ? 'active' : '' }}">
                             <i class="fas fa-user-shield"></i>
                             <span>Kelola Admin</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.users.index', ['role' => 'agent']) }}" class="nav-link">
+                        <a href="{{ route('admin.users.index', ['role' => 'agent']) }}" class="nav-link {{ request()->routeIs('admin.users.*') && request('role') === 'agent' ? 'active' : '' }}">
                             <i class="fas fa-user-cog"></i>
                             <span>Kelola Operator</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.users.index', ['role' => 'customer']) }}" class="nav-link">
+                        <a href="{{ route('admin.users.index', ['role' => 'customer']) }}" class="nav-link {{ request()->routeIs('admin.users.*') && request('role') === 'customer' ? 'active' : '' }}">
                             <i class="fas fa-users"></i>
                             <span>Kelola User</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.categories.index') }}" class="nav-link">
+                        <a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                             <i class="fas fa-list"></i>
                             <span>Kategori</span>
                         </a>

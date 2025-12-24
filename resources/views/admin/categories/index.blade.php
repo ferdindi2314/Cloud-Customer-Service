@@ -16,7 +16,7 @@
         <table class="table table-striped align-middle mb-0">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>No</th>
                     <th>Nama</th>
                     <th>Slug</th>
                     <th>Deskripsi</th>
@@ -26,7 +26,13 @@
             <tbody>
                 @foreach($categories as $c)
                     <tr>
-                        <td>{{ $c->id }}</td>
+                        <td>
+                            @if(method_exists($categories, 'currentPage'))
+                                {{ ($categories->currentPage() - 1) * $categories->perPage() + $loop->iteration }}
+                            @else
+                                {{ $loop->iteration }}
+                            @endif
+                        </td>
                         <td>{{ $c->name }}</td>
                         <td>{{ $c->slug }}</td>
                         <td>{{ $c->description }}</td>

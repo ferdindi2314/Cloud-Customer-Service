@@ -128,7 +128,8 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus');
+        // Redirect back to the management list for the same role as the deleted user
+        return redirect()->route('admin.users.index', ['role' => $user->role])->with('success', 'User berhasil dihapus');
     }
 
     public function updateRole(Request $request, User $user)

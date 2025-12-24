@@ -318,7 +318,6 @@
                                     @elseif($role === 'agent')
                                         <option value="in_progress" @selected($cur==='in_progress')>⚙️ In Progress (Dikerjakan)</option>
                                         <option value="resolved" @selected($cur==='resolved')>✅ Resolved (Selesai)</option>
-                                        <option value="closed" @selected($cur==='closed')>🔒 Closed (Ditutup)</option>
                                     @endif
                                 </select>
                             </div>
@@ -355,17 +354,26 @@
                                         }
                                     }
                                     if (select){
-                                        select.addEventListener('change', function(ev){
-                                            // Prevent agent from changing a closed ticket
-                                            if (initialStatus === 'closed' && role === 'agent' && select.value !== 'closed'){
+                                        // If ticket is already closed, agents must not change it.
+                                        // Disable the select and submit button for clarity.
+                                        if (initialStatus === 'closed' && role === 'agent'){
+                                            select.disabled = true;
+                                            const submitBtn = form.querySelector('button[type="submit"]');
+                                            if (submitBtn) submitBtn.disabled = true;
+                                            // Inform agent once on load
+                                            setTimeout(function(){
                                                 Swal.fire({icon:'info', title:'Ticket sudah ditutup', text:'Ticket yang telah ditutup tidak dapat diubah statusnya oleh agent.'});
-                                                // revert selection
-                                                select.value = 'closed';
-                                                toggleEvidence();
-                                                return;
-                                            }
+                                            }, 150);
+                                            // ensure evidence hidden
+                                            toggleEvidence();
+                                        }
+
+                                        select.addEventListener('change', function(ev){
+                                            // Normally we toggle evidence when agent selects 'resolved'
+                                            // If the ticket was closed on load we already disabled controls above.
                                             toggleEvidence();
                                         });
+
                                         // init
                                         toggleEvidence();
                                     }
