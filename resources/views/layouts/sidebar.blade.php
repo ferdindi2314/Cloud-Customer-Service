@@ -37,6 +37,45 @@
             padding: 20px 0;
             box-shadow: 2px 0 8px rgba(0,0,0,0.1);
             z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .sidebar.hidden-mobile {
+            transform: translateX(-100%);
+        }
+
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .hamburger-btn i {
+            font-size: 20px;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .sidebar-header {
@@ -184,7 +223,7 @@
         }
 
         /* RESPONSIVE */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .sidebar {
                 width: 220px;
             }
@@ -194,24 +233,40 @@
             }
 
             .content {
-                padding: 15px;
+                padding: 20px;
             }
 
             .topbar {
-                padding: 12px 15px;
+                padding: 12px 20px;
             }
 
             .topbar-title {
                 font-size: 18px;
             }
+
+            /* Table responsive */
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 600px;
+            }
         }
 
-        @media (max-width: 576px) {
+        @media (max-width: 768px) {
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                box-shadow: none;
+                width: 260px;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show-mobile {
+                transform: translateX(0);
+            }
+
+            .hamburger-btn {
+                display: block;
             }
 
             .main-wrapper {
@@ -223,27 +278,204 @@
                 border-top: 1px solid rgba(255,255,255,0.1);
             }
 
+            .content {
+                padding: 15px;
+            }
+
+            .topbar {
+                padding: 12px 15px;
+                padding-left: 60px; /* Space for hamburger */
+            }
+
+            .topbar-title {
+                font-size: 16px;
+            }
+
+            /* Button groups */
+            .btn-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .btn-sm {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+
+            /* Cards */
+            .card {
+                margin-bottom: 15px;
+            }
+
+            /* Grid columns - stack on mobile */
+            .col-lg-8, .col-lg-4, .col-md-6 {
+                width: 100%;
+                padding: 0 15px;
+            }
+
+            .row.g-3 {
+                gap: 15px 0;
+            }
+        }
+
+        @media (max-width: 576px) {
             .topbar {
                 flex-direction: column;
-                gap: 10px;
-                padding: 15px;
+                gap: 8px;
+                padding: 12px;
             }
 
             .topbar-title {
                 width: 100%;
                 text-align: center;
+                font-size: 15px;
             }
 
             .topbar-user {
                 width: 100%;
                 justify-content: center;
             }
+
+            .user-badge {
+                font-size: 12px;
+                padding: 5px 10px;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            /* Tables - scroll horizontal on very small screens */
+            table {
+                font-size: 13px;
+            }
+
+            table th, table td {
+                padding: 8px 6px;
+            }
+
+            /* Stack buttons vertically */
+            .d-flex.gap-2, .d-flex.gap-3 {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            /* Panel adjustments */
+            .panel {
+                border-radius: 10px;
+            }
+
+            .panel-header {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+
+            /* Alert adjustments */
+            .alert {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            /* Form controls */
+            .form-control, .form-select {
+                font-size: 14px;
+            }
+
+            /* Badge sizing */
+            .badge {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .topbar {
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px;
+                padding-left: 55px;
+            }
+
+            .topbar-title {
+                width: 100%;
+                text-align: center;
+                font-size: 15px;
+            }
+
+            .topbar-user {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .user-badge {
+                font-size: 12px;
+                padding: 5px 10px;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            table th, table td {
+                padding: 8px 6px;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 8px;
+                font-size: 13px;
+            }
+
+            .form-control, .form-select {
+                font-size: 14px;
+            }
+
+            .badge {
+                font-size: 11px;
+            }
+            
+            .sidebar-nav a {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .sidebar-header h4 {
+                font-size: 15px;
+            }
+
+            .topbar-title {
+                font-size: 13px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Hamburger Button -->
+    <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h4>☁️ CloudTicket</h4>
             <p>Support System</p>
@@ -377,6 +609,31 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar.classList.contains('show-mobile')) {
+                sidebar.classList.remove('show-mobile');
+                overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('show-mobile');
+                overlay.classList.add('active');
+            }
+        }
+
+        // Close sidebar when clicking on a link (mobile)
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                link.addEventListener('click', () => {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('sidebar-overlay');
+                    sidebar.classList.remove('show-mobile');
+                    overlay.classList.remove('active');
+                });
+            });
+        }
+
         function confirmLogout() {
             Swal.fire({
                 title: 'Apakah Anda ingin logout?',

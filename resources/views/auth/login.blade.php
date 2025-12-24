@@ -1,65 +1,56 @@
 @extends('layouts.bootstrap')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .auth-wrapper { padding: 48px 0; }
+    .auth-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 8px 24px rgba(15,23,42,.06); }
+    .auth-title { font-weight: 800; letter-spacing: .2px; }
+    .auth-muted { color: #6b7280; }
+</style>
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">{{ __('Login') }}</div>
+<div class="auth-wrapper">
+    <div class="row justify-content-center">
+        <div class="col-sm-10 col-md-8 col-lg-5">
+            <div class="text-center mb-3">
+                <small class="text-muted">Cloud Ticketing</small>
+                <h2 class="auth-title mt-1 mb-1">Masuk ke Dashboard</h2>
+                <div class="auth-muted">Kelola tiket dan pantau progres dengan cepat.</div>
+            </div>
 
-            <div class="card-body">
-                @if(session('status'))
-                    <div class="alert alert-info">{{ session('status') }}</div>
-                @endif
+            @if(session('status'))
+                <div class="alert alert-info">{{ session('status') }}</div>
+            @endif
 
-                <form method="POST" action="{{ route('login') }}">
+            <div class="auth-card p-4">
+                <form method="POST" action="{{ route('login') }}" class="d-grid gap-3">
                     @csrf
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">{{ __('Email') }}</label>
-                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" class="form-control">
+                    <div>
+                        <label for="email" class="form-label">Email</label>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" class="form-control @error('email') is-invalid @enderror">
+                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">{{ __('Password') }}</label>
-                        <input id="password" type="password" name="password" required autocomplete="current-password" class="form-control">
+                    <div>
+                        <label for="password" class="form-label">Password</label>
+                        <input id="password" type="password" name="password" required autocomplete="current-password" class="form-control @error('password') is-invalid @enderror">
+                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember">
-                        <label class="form-check-label" for="remember_me">{{ __('Remember me') }}</label>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="remember">
+                            <label class="form-check-label" for="remember_me">Remember me</label>
+                        </div>
+                        <a href="{{ route('password.request') }}">Lupa password?</a>
                     </div>
 
-                    <div class="d-grid">
-                        <button class="btn btn-primary btn-lg" type="submit">{{ __('Log in') }}</button>
-                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Masuk</button>
+
+                    <div class="text-center text-muted">Belum punya akun? <a href="{{ route('register') }}">Daftar</a></div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-@if($errors->has('email'))
-<script>
-    Swal.fire({
-        icon: 'error',
-        title: 'Email Tidak Ditemukan',
-        text: '{{ $errors->first('email') }}',
-        confirmButtonText: 'OK'
-    });
-</script>
-@endif
-
-@if($errors->has('password'))
-<script>
-    Swal.fire({
-        icon: 'error',
-        title: 'Password Salah',
-        text: 'Password yang Anda masukkan tidak sesuai.',
-        confirmButtonText: 'OK'
-    });
-</script>
-@endif
-
 @endsection

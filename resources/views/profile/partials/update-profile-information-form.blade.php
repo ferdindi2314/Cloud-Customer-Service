@@ -1,10 +1,9 @@
 <section>
-    <h2 class="h5 mb-2">{{ __('Profile Information') }}</h2>
-    <p class="text-muted small mb-3">{{ __("Update your account's profile information and email address.") }}</p>
+    <p class="text-muted small mb-4">Perbarui informasi profil dan alamat email akun Anda.</p>
 
     @if(session('status') === 'profile-updated')
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            Profil berhasil diperbarui.
+        <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 10px; border-left: 4px solid #16a34a;">
+            ✅ Profil berhasil diperbarui.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -16,14 +15,14 @@
         @method('patch')
 
         <div class="mb-3">
-            <label for="name" class="form-label">{{ __('Name') }}</label>
-            <input id="name" name="name" type="text" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
+            <label for="name" class="form-label fw-semibold"><span class="text-primary">👤</span> Nama Lengkap</label>
+            <input id="name" name="name" type="text" class="form-control @error('name') is-invalid @enderror" style="border-radius: 10px; padding: 12px;" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name" placeholder="Masukkan nama lengkap">
             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
 
         <div class="mb-3">
-            <label for="email" class="form-label">{{ __('Email') }}</label>
-            <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required autocomplete="username">
+            <label for="email" class="form-label fw-semibold"><span class="text-primary">📧</span> Email Address</label>
+            <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" style="border-radius: 10px; padding: 12px;" value="{{ old('email', $user->email) }}" required autocomplete="username" placeholder="email@example.com">
             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
@@ -39,7 +38,7 @@
         </div>
 
         <div class="d-flex gap-2">
-            <button class="btn btn-primary">{{ __('Save') }}</button>
+            <button class="btn btn-primary" style="border-radius: 10px; padding: 10px 24px;">💾 Simpan Perubahan</button>
         </div>
     </form>
 </section>

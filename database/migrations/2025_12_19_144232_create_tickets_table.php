@@ -19,8 +19,8 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('agent_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
-            $table->enum('status', ['open', 'in_progress', 'resolved', 'closed'])->default('open');
-            $table->enum('priority', ['low', 'medium', 'high', 'critical'])->default('medium');
+            $table->string('status')->default('open');
+            $table->string('priority')->default('medium');
             $table->json('attachments')->nullable(); // Array of file paths
             $table->timestamps();
             $table->softDeletes(); // Untuk tracking deleted tickets

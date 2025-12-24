@@ -33,21 +33,24 @@ Route::get('/dashboard', function () {
     if ($role === 'admin') {
         // Admin lihat SEMUA tickets
         $stats['open'] = \App\Models\Ticket::where('status', 'open')->count();
+        $stats['assigned'] = \App\Models\Ticket::where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('status', 'in_progress')->count();
         $stats['resolved'] = \App\Models\Ticket::where('status', 'resolved')->count();
         $stats['closed'] = \App\Models\Ticket::where('status', 'closed')->count();
         $stats['total'] = \App\Models\Ticket::count();
         $stats['unassigned'] = \App\Models\Ticket::whereNull('agent_id')->count();
     } elseif ($role === 'agent') {
-        // Agent hanya lihat tickets yang DI-ASSIGN ke dia
+        // Agent hanya lihat tickets yang DI-ASSIGN ke dia (exclude resolved dan closed)
         $stats['open'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'open')->count();
+        $stats['assigned'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'in_progress')->count();
         $stats['resolved'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'resolved')->count();
         $stats['closed'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'closed')->count();
-        $stats['total'] = \App\Models\Ticket::where('agent_id', $user->id)->count();
+        $stats['total'] = \App\Models\Ticket::where('agent_id', $user->id)->whereNotIn('status', ['resolved', 'closed'])->count();
     } else {
         // Customer hanya lihat tickets MILIK dia
         $stats['open'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'open')->count();
+        $stats['assigned'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'in_progress')->count();
         $stats['resolved'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'resolved')->count();
         $stats['closed'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'closed')->count();

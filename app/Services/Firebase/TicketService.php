@@ -73,8 +73,10 @@ class TicketService
     public function getTicketsByAgent(int $agentId): array
     {
         // Agent HANYA lihat tickets yang di-assign ke dia
+        // DAN exclude tickets yang sudah resolved atau closed (sudah selesai dikerjakan)
         $tickets = Ticket::with(['customer', 'agent', 'category'])
             ->where('agent_id', $agentId)
+            ->whereNotIn('status', ['resolved', 'closed'])
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(fn($ticket) => $this->ticketToArray($ticket))
