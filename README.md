@@ -15,7 +15,7 @@ Sistem **Cloud Customer Support** berbasis Laravel 11 dan Firebase untuk mengelo
 - 💬 **Comment System** - Komunikasi 2 arah Customer ↔ Agent
 - 📎 **File Attachments** - Upload foto/dokumen bukti
 - 🔐 **Authentication** - Laravel Breeze dengan email/password
-- 🗄️ **Hybrid Database** - Firestore (cloud) + SQLite (local) untuk performa optimal
+- ☁️ **Cloud-Based Database** - Firebase Firestore untuk real-time sync penuh
 - 🎨 **Responsive UI** - Bootstrap 5 dengan design modern
 
 ---
@@ -40,8 +40,7 @@ Sistem **Cloud Customer Support** berbasis Laravel 11 dan Firebase untuk mengelo
 |-------|-----------|--------|
 | **Backend** | Laravel 11 (PHP 8.3) | Framework utama aplikasi |
 | **Frontend** | Blade Templates + Bootstrap 5 | View engine & UI framework |
-| **Database (Local)** | SQLite | Fast query untuk users, categories, tickets |
-| **Database (Cloud)** | Firebase Firestore | Real-time sync antar user |
+| **Database** | Firebase Firestore | Cloud database real-time untuk semua data |
 | **File Storage** | Firebase Storage | Cloud storage untuk attachments |
 | **Authentication** | Laravel Breeze | Login, register, password reset |
 | **Authorization** | Custom RoleMiddleware | Role-based access control |
@@ -50,7 +49,7 @@ Sistem **Cloud Customer Support** berbasis Laravel 11 dan Firebase untuk mengelo
 
 ## 🏗️ Arsitektur Sistem
 
-### Hybrid Database Architecture
+### Cloud-First Architecture (Firestore Only)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -66,20 +65,24 @@ Sistem **Cloud Customer Support** berbasis Laravel 11 dan Firebase untuk mengelo
          ┌───────────▼───────────┐
          │   TicketService       │
          │ (Business Logic Layer)│
-         └─────┬───────────┬─────┘
-               │           │
-       ┌───────▼──┐    ┌──▼────────┐
-       │ SQLite   │    │ Firestore │
-       │ Database │◄───►│ (Cloud)   │
-       └──────────┘    └───────────┘
-          (Fast          (Real-time
-           Query)         Sync)
+         └───────────┬───────────┘
+                     │
+              ┌──────▼──────┐
+              │  Firestore  │
+              │  (Cloud DB) │
+              └─────────────┘
+            (Real-time Sync,
+             Cloud-based,
+             Auto-scaling)
 ```
 
-**Keuntungan Dual Database:**
-- **Firestore**: Real-time sync, cloud-based, auto-scaling
-- **SQLite**: Query cepat, filtering & sorting efisien, tidak butuh internet untuk query
-- **Strategi**: Setiap perubahan di Firestore auto-sync ke SQLite
+**Keuntungan Firestore Only:**
+- ⚡ **Real-time Sync** - Update langsung terlihat semua user
+- ☁️ **Cloud-Based** - Akses dari mana saja, tidak perlu server lokal
+- 📈 **Auto-scaling** - Otomatis scale sesuai beban
+- 🔄 **No Sync Issues** - Satu database source of truth
+- 🛡️ **Built-in Security** - Firebase security rules
+- 💰 **Cost Efficient** - Pay-as-you-go model
 
 ---
 
@@ -148,24 +151,15 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### Step 4: Database Setup
+### Step 4: Firebase Setup (PENTING!)
 
-```bash
-# Run migrations (buat tabel users, categories, tickets, ticket_comments)
-php artisan migrate
+Sebelum menjalankan aplikasi, **setup Firebase terlebih dahulu** sesuai section [Konfigurasi Firebase](#-konfigurasi-firebase) di bawah.
 
-# Seed data default (admin, agent, customer, categories)
-php artisan db:seed
-```
-
-**Default Users Setelah Seeding:**
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@example.com | password |
-| Agent 1 | agent1@example.com | password |
-| Agent 2 | agent2@example.com | password |
-| Customer | customer1@example.com | password |
+**Catatan:**
+- Semua data disimpan di Firebase Firestore (cloud-based)
+- Tidak ada local database SQLite
+- Pastikan `service-account.json` sudah ada di `storage/app/firebase/`
+- User credentials bisa dibuat manual di Firestore atau pakai dummy data untuk testing
 
 ### Step 5: Build Assets
 
@@ -269,69 +263,11 @@ Response JSON jika sukses:
 
 ---
 
-## 🗄️ Struktur Database
+## 🗄️ Struktur Database (Firestore Only)
 
-### SQLite Tables (Local Database)
+Semua data disimpan di **Firebase Firestore** (cloud-based, real-time).
 
-#### Table: `users`
-```sql
-id              INT PRIMARY KEY
-name            VARCHAR(255)     -- Nama lengkap
-email           VARCHAR(255)     -- Email (unique)
-password        VARCHAR(255)     -- Password (hashed bcrypt)
-role            VARCHAR(50)      -- 'admin', 'agent', 'customer'
-created_at      TIMESTAMP
-updated_at      TIMESTAMP
-```
-
-#### Table: `categories`
-```sql
-id              INT PRIMARY KEY
-name            VARCHAR(255)     -- Nama kategori
-slug            VARCHAR(255)     -- URL-friendly slug
-description     TEXT             -- Deskripsi kategori
-created_at      TIMESTAMP
-updated_at      TIMESTAMP
-```
-
-Default categories dari seeder:
-- Perbaikan Mesin
-- Quality Control
-- Safety Issue
-- Request Sparepart
-- Lain-lain
-
-#### Table: `tickets`
-```sql
-id              INT PRIMARY KEY
-firebase_id     VARCHAR(255)     -- ID di Firestore (untuk sync)
-title           VARCHAR(255)     -- Judul ticket
-description     TEXT             -- Detail masalah
-customer_id     INT              -- FK ke users
-agent_id        INT NULL         -- FK ke users (agent assigned)
-category_id     INT              -- FK ke categories
-status          VARCHAR(50)      -- 'open','assigned','in_progress','resolved','closed'
-priority        VARCHAR(50)      -- 'low', 'medium', 'high'
-attachments     JSON NULL        -- Array file attachments
-created_at      TIMESTAMP
-updated_at      TIMESTAMP
-deleted_at      TIMESTAMP NULL   -- Soft delete
-```
-
-#### Table: `ticket_comments`
-```sql
-id              INT PRIMARY KEY
-firebase_id     VARCHAR(255)     -- ID di Firestore
-ticket_id       INT              -- FK ke tickets
-user_id         INT              -- FK ke users
-comment         TEXT             -- Isi komentar
-attachments     JSON NULL        -- Array file attachments
-is_internal     BOOLEAN          -- Internal comment (admin/agent only)
-created_at      TIMESTAMP
-updated_at      TIMESTAMP
-```
-
-### Firestore Collections (Cloud Database)
+**Collections & Subcollections:**
 
 #### Collection: `tickets/{ticketId}`
 ```javascript
