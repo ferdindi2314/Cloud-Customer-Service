@@ -553,7 +553,7 @@ service firebase.storage {
 
 ## 📚 Dokumentasi Lengkap
 
-Untuk penjelasan lebih detail tentang alur program, arsitektur, dan cara presentasi ke dosen, baca:
+Untuk penjelasan lebih detail tentang alur program dan arsitektur, baca:
 
 📄 **[PENJELASAN_ALUR.md](PENJELASAN_ALUR.md)** - Dokumentasi lengkap dengan:
 - Konsep dasar sistem
@@ -609,7 +609,3 @@ Jika ada pertanyaan atau issue:
 3. Cek [Troubleshooting](#-troubleshooting) section di atas
 
 ---
-
-**⭐ Jangan lupa kasih star jika project ini membantu! ⭐**
-
-**🎉 Good Luck untuk UAS-nya! 🎉**
