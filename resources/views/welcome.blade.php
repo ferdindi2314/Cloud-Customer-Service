@@ -52,7 +52,7 @@
 <div class="container-fluid px-0 hero">
     <div class="container" style="position: relative; z-index: 1;">
         <div class="row align-items-center justify-content-center">
-            <div class="col-lg-6 col-md-8 mb-5 mb-lg-0">
+            <div class="col-lg-6 col-md-8 mb-5 mb-lg-0" style="padding-left: 40px;">
                 <h1 style="font-size: 3.2rem; font-weight: 800; margin-bottom: 20px; line-height: 1.2;">
                     Customer Support<br>Jadi Lebih <span style="color: #fbbf24;">Mudah</span>
                 </h1>
@@ -86,51 +86,51 @@
 {{-- Features Section --}}
 <div class="container my-5 py-5">
     <div class="text-center mb-5">
-        <h2 style="font-size: 2.3rem; font-weight: 700; margin-bottom: 12px;">✨ Fitur Unggulan</h2>
-        <p class="text-muted" style="font-size: 1.05rem;">Semua yang Anda butuhkan untuk customer support yang efektif</p>
+        <h2 style="font-size: 2.3rem; font-weight: 700; margin-bottom: 12px;">💡 Kegunaan Website</h2>
+        <p class="text-muted" style="font-size: 1.05rem;">Berbagai manfaat yang dapat Anda peroleh dari platform kami</p>
     </div>
     
     <div class="row g-4">
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">⚡</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">Real-Time Sync</h4>
-                <p class="text-muted">Semua update tersimpan otomatis di cloud. Akses dari mana saja, kapan saja.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">📋</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Kelola Tiket Customer</h4>
+                <p class="text-muted">Organisir semua permintaan bantuan pelanggan dalam satu platform terpusat yang mudah diakses.</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">👥</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">Multi-Role</h4>
-                <p class="text-muted">Admin, Agent, dan Customer - masing-masing punya akses sesuai kebutuhan.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">⚡</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Respon Lebih Cepat</h4>
+                <p class="text-muted">Tingkatkan kecepatan respons terhadap pelanggan dengan sistem notifikasi real-time.</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">📊</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">Analytics</h4>
-                <p class="text-muted">Dashboard lengkap dengan statistik dan insight untuk keputusan yang lebih baik.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">👥</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Kolaborasi Tim</h4>
+                <p class="text-muted">Koordinasi antar agent dan admin untuk menyelesaikan masalah pelanggan dengan lebih efisien.</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #34d399, #10b981);">💬</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">Comment System</h4>
-                <p class="text-muted">Komunikasi dua arah yang jelas antara customer dan support team.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #34d399, #10b981);">📊</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Monitor Performa</h4>
+                <p class="text-muted">Pantau statistik dan performa tim support untuk meningkatkan kualitas layanan.</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);">📎</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">File Attachments</h4>
-                <p class="text-muted">Upload screenshot, dokumen, atau file apapun untuk memperjelas masalah.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);">🔄</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Tracking Status</h4>
+                <p class="text-muted">Lacak progres setiap tiket dari awal hingga selesai dengan transparan dan akurat.</p>
             </div>
         </div>
         <div class="col-md-4">
             <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #a78bfa, #8b5cf6);">🔔</div>
-                <h4 style="font-weight: 700; margin-bottom: 12px;">Status Tracking</h4>
-                <p class="text-muted">Pantau progres tiket dari Open sampai Closed dengan timeline yang jelas.</p>
+                <div class="feature-icon" style="background: linear-gradient(135deg, #a78bfa, #8b5cf6);">☁️</div>
+                <h4 style="font-weight: 700; margin-bottom: 12px;">Akses Cloud</h4>
+                <p class="text-muted">Akses sistem dari mana saja dan kapan saja dengan penyimpanan cloud yang aman.</p>
             </div>
         </div>
     </div>
@@ -212,7 +212,7 @@
     <div class="cta-section text-center">
         <h2 style="font-size: 2.3rem; font-weight: 800; margin-bottom: 16px;">Siap Meningkatkan Layanan Anda?</h2>
         <p style="font-size: 1.1rem; margin-bottom: 32px; opacity: 0.95;">
-            Bergabung dengan ribuan perusahaan yang sudah menggunakan platform kami
+            Mulai kelola tiket customer support Anda dengan lebih efektif dan efisien menggunakan platform cloud kami
         </p>
         <div class="d-flex justify-content-center flex-wrap gap-3">
             @guest
