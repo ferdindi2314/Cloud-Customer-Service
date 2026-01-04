@@ -7,16 +7,37 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * USER MODEL - Model untuk data pengguna sistem
+ * 
+ * PENJELASAN KE DOSEN:
+ * Model ini merepresentasikan pengguna sistem dengan 3 role berbeda:
+ * 1. ADMIN   - Mengelola sistem, assign tickets ke agent
+ * 2. AGENT   - Menangani tickets yang di-assign, update status
+ * 3. CUSTOMER - Membuat tickets baru, melihat progress tickets mereka
+ * 
+ * FIELD PENTING:
+ * - name: Nama lengkap user
+ * - email: Email untuk login (unique)
+ * - password: Password yang sudah di-hash
+ * - role: Jenis user (admin/agent/customer)
+ * 
+ * KEAMANAN:
+ * - Password otomatis di-hash sebelum disimpan
+ * - Role-based access control untuk setiap fitur
+ * - Middleware RoleMiddleware mengecek permission di setiap route
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     *
+     * Helper method untuk cek role user
+     * Contoh: if ($user->hasRole('admin')) { ... }
+     * 
+     * @param string $role - Role yang mau dicek (admin/agent/customer)
+     * @return bool - True jika user punya role tersebut
      */
     public function hasRole(string $role): bool
     {

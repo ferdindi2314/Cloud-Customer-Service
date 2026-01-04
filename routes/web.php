@@ -7,21 +7,78 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketCommentController;
 use App\Services\Firebase\FirebaseFactory;
 
+/**
+ * =================================================================
+ * ROUTES WEB.PHP - Definisi semua route/URL aplikasi
+ * =================================================================
+ * 
+ * PENJELASAN KE DOSEN:
+ * File ini adalah "peta jalan" aplikasi yang mendefinisikan:
+ * - URL apa saja yang tersedia
+ * - Controller mana yang handle URL tersebut
+ * - Middleware apa yang melindungi route (auth, role, dll)
+ * 
+ * MIDDLEWARE PENTING:
+ * - auth: User harus login dulu
+ * - role:admin,agent: Hanya admin dan agent yang bisa akses
+ * - verified: Email harus terverifikasi (optional)
+ * - signed: URL harus valid (untuk download file)
+ * 
+ * STRUKTUR ROUTE:
+ * 1. Public routes (landing page)
+ * 2. Auth routes (login, register) - di auth.php
+ * 3. Dashboard route (setelah login)
+ * 4. Admin-only routes (kelola user, kategori)
+ * 5. Ticket routes (semua role bisa akses, tapi dengan permission berbeda)
+ */
 
+// =================================================================
+// PUBLIC ROUTES - Bisa diakses tanpa login
+// =================================================================
+
+/**
+ * Landing Page / Home
+ * Route: GET /
+ * Controller: Inline closure (return view langsung)
+ * View: resources/views/welcome.blade.php
+ */
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/dashboard', function () {
-    // ALUR DASHBOARD:
-    // 1. Ambil data user yang login
-    // 2. Hitung statistik tickets berdasarkan role
-    // 3. Tampilkan dashboard sesuai role (admin/agent/customer)
+// =================================================================
+// DASHBOARD ROUTE - Butuh login (middleware auth)
+// =================================================================
 
+/**
+ * Dashboard - Halaman utama setelah login
+ * Route: GET /dashboard
+ * Middleware: auth, verified
+ * 
+ * LOGIC DASHBOARD:
+ * 1. Ambil data user yang sedang login
+ * 2. Hitung statistik tickets berdasarkan role user:
+ *    - Admin: Lihat SEMUA tickets
+ *    - Agent: Lihat tickets yang DI-ASSIGN ke dia (exclude resolved & closed)
+ *    - Customer: Lihat tickets MILIK dia saja
+ * 3. Tampilkan dashboard dengan card statistik
+ * 
+ * STATISTIK YANG DIHITUNG:
+ * - open: Jumlah ticket baru (belum ditangani)
+ * - assigned: Jumlah ticket yang sudah di-assign ke agent
+ * - in_progress: Jumlah ticket yang sedang dikerjakan
+ * - resolved: Jumlah ticket yang sudah selesai
+ * - closed: Jumlah ticket yang sudah ditutup/arsip
+ * - total: Total semua tickets
+ * - unassigned (admin only): Ticket yang belum di-assign
+ */
+Route::get('/dashboard', function () {
+    // STEP 1: Ambil data user yang login
     $user = auth()->user();
     $role = $user->role;
 
-    // Statistik ticket berdasarkan status
+    // STEP 2: Inisialisasi array statistik
+    // Array ini akan diisi dengan jumlah tickets berdasarkan status
     $stats = [
         'open' => 0,
         'in_progress' => 0,
@@ -30,25 +87,36 @@ Route::get('/dashboard', function () {
         'total' => 0
     ];
 
+    // STEP 3: Hitung statistik berdasarkan role user
+    
     if ($role === 'admin') {
-        // Admin lihat SEMUA tickets
+        // ADMIN: Lihat SEMUA tickets (tanpa filter customer_id atau agent_id)
         $stats['open'] = \App\Models\Ticket::where('status', 'open')->count();
         $stats['assigned'] = \App\Models\Ticket::where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('status', 'in_progress')->count();
         $stats['resolved'] = \App\Models\Ticket::where('status', 'resolved')->count();
         $stats['closed'] = \App\Models\Ticket::where('status', 'closed')->count();
         $stats['total'] = \App\Models\Ticket::count();
+        
+        // Statistik khusus admin: tickets yang belum di-assign
         $stats['unassigned'] = \App\Models\Ticket::whereNull('agent_id')->count();
+        
     } elseif ($role === 'agent') {
-        // Agent hanya lihat tickets yang DI-ASSIGN ke dia (exclude resolved dan closed)
+        // AGENT: Hanya lihat tickets yang DI-ASSIGN ke dia
+        // Exclude tickets yang sudah resolved atau closed (sudah selesai dikerjakan)
         $stats['open'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'open')->count();
         $stats['assigned'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'in_progress')->count();
         $stats['resolved'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'resolved')->count();
         $stats['closed'] = \App\Models\Ticket::where('agent_id', $user->id)->where('status', 'closed')->count();
-        $stats['total'] = \App\Models\Ticket::where('agent_id', $user->id)->whereNotIn('status', ['resolved', 'closed'])->count();
+        
+        // Total untuk agent: hanya yang belum selesai (exclude resolved & closed)
+        $stats['total'] = \App\Models\Ticket::where('agent_id', $user->id)
+                                           ->whereNotIn('status', ['resolved', 'closed'])
+                                           ->count();
+                                           
     } else {
-        // Customer hanya lihat tickets MILIK dia
+        // CUSTOMER: Hanya lihat tickets MILIK dia (filter by customer_id)
         $stats['open'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'open')->count();
         $stats['assigned'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'assigned')->count();
         $stats['in_progress'] = \App\Models\Ticket::where('customer_id', $user->id)->where('status', 'in_progress')->count();
@@ -57,14 +125,32 @@ Route::get('/dashboard', function () {
         $stats['total'] = \App\Models\Ticket::where('customer_id', $user->id)->count();
     }
 
+    // STEP 4: Kirim data stats ke view dashboard
+    // View akan tampilkan dalam bentuk card dengan warna berbeda per status
     return view('dashboard', compact('stats'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// =================================================================
+// FIREBASE TEST ROUTE - Admin/Agent only (untuk cek koneksi Firebase)
+// =================================================================
+
+/**
+ * Firebase Connection Test
+ * Route: GET /firebase-test
+ * Middleware: auth, role:admin,agent
+ * 
+ * FUNGSI:
+ * Endpoint untuk test koneksi ke Firebase Firestore & Storage
+ * Berguna saat troubleshooting atau verifikasi setup Firebase
+ * 
+ * RETURN:
+ * JSON response dengan status koneksi Firestore dan Storage
+ */
 Route::get('/firebase-test', function () {
     try {
         $factory = FirebaseFactory::make();
 
-        // Firestore test
+        // Test Firestore connection
         $firestoreDb = $factory->createFirestore()->database();
         $firestoreOk = true;
         $firestoreProbe = [];
@@ -84,7 +170,7 @@ Route::get('/firebase-test', function () {
             $firestoreProbe = ['error' => $e->getMessage()];
         }
 
-        // Storage test
+        // Test Storage connection
         $storageOk = true;
         $storageProbe = [];
         try {
@@ -112,13 +198,45 @@ Route::get('/firebase-test', function () {
     }
 })->middleware(['auth', 'role:admin,agent'])->name('firebase.test');
 
+// =================================================================
+// PROFILE ROUTES - Kelola profile user
+// =================================================================
+
+/**
+ * Profile Management Routes
+ * Middleware: auth (harus login)
+ * 
+ * Routes:
+ * - GET /profile - Tampilkan form edit profile
+ * - PATCH /profile - Update profile (name, email)
+ * - DELETE /profile - Hapus akun
+ */
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// =================================================================
+// ADMIN-ONLY ROUTES - Hanya admin yang bisa akses
+// =================================================================
+
+/**
+ * Admin Routes Group
+ * Middleware: auth, role:admin
+ * 
+ * FITUR ADMIN:
+ * 1. User Management - CRUD users (buat agent, customer baru, edit role, hapus)
+ * 2. Category Management - CRUD kategori tickets
+ * 
+ * PERMISSION:
+ * Semua route di grup ini HANYA bisa diakses oleh user dengan role 'admin'
+ * Jika non-admin coba akses, akan di-redirect atau error 403 Forbidden
+ */
 Route::middleware(['auth', 'role:admin'])->group(function () {
+    
+    // ===== USER MANAGEMENT ROUTES =====
+    // Admin bisa kelola semua users (view, create, edit, delete, change role)
     Route::get('/admin/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
     Route::get('/admin/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
     Route::post('/admin/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
@@ -128,7 +246,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/admin/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('admin.users.updateRole');
 
-    // Admin categories management
+    // ===== CATEGORY MANAGEMENT ROUTES =====
+    // Admin bisa kelola kategori tickets (create, edit, delete)
     Route::get('/admin/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('/admin/categories/create', [\App\Http\Controllers\Admin\CategoryController::class, 'create'])->name('admin.categories.create');
     Route::post('/admin/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('admin.categories.store');
@@ -137,25 +256,99 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/admin/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('admin.categories.destroy');
 });
 
+// =================================================================
+// TICKET ROUTES - Semua role bisa akses (dengan permission berbeda)
+// =================================================================
+
+/**
+ * Ticket Routes Group
+ * Middleware: auth, role:customer,admin,agent
+ * 
+ * PERMISSION PER ROLE:
+ * - Customer: Buat ticket baru, lihat & edit tickets milik mereka, comment di tickets mereka
+ * - Agent: Lihat tickets yang di-assign ke mereka, update status, tambah comment
+ * - Admin: Lihat semua tickets, assign ke agent, close tickets
+ * 
+ * ROUTES:
+ * - Resource routes (index, create, store, show, edit, update, destroy)
+ * - Custom routes (assign, updateStatus, comments, download)
+ */
 Route::middleware(['auth', 'role:customer,admin,agent'])->group(function () {
-    // Download attachment (supports signed URL)
+    
+    // ===== DOWNLOAD ATTACHMENT ROUTE =====
+    /**
+     * Download File Attachment
+     * Route: GET /tickets/{ticket}/attachments/download/{path}
+     * Middleware: signed (URL harus valid & tidak expired)
+     * 
+     * KEAMANAN:
+     * - URL di-sign dengan expiry time (default 1 jam)
+     * - Hanya owner ticket, assigned agent, atau admin yang bisa download
+     * - File path di-encode base64 untuk keamanan
+     */
     Route::get('/tickets/{ticket}/attachments/download/{path}', [\App\Http\Controllers\TicketController::class, 'downloadAttachment'])
         ->name('tickets.attachments.download')
         ->middleware('signed');
 
+    // ===== TICKET RESOURCE ROUTES =====
+    /**
+     * Standard CRUD operations untuk Tickets
+     * - GET /tickets - List semua tickets (filtered by role)
+     * - GET /tickets/create - Form buat ticket baru
+     * - POST /tickets - Simpan ticket baru
+     * - GET /tickets/{id} - Detail ticket
+     * - GET /tickets/{id}/edit - Form edit ticket
+     * - PUT /tickets/{id} - Update ticket
+     * - DELETE /tickets/{id} - Hapus ticket
+     */
     Route::resource('tickets', TicketController::class);
 
-    // Comment Ticket
+    // ===== COMMENT ROUTE =====
+    /**
+     * Tambah komentar di ticket
+     * Route: POST /tickets/{ticket}/comments
+     * Semua role bisa comment (dengan permission check di controller)
+     */
     Route::post('/tickets/{ticket}/comments', [TicketCommentController::class, 'store'])->name('tickets.comments.store');
 
-    // Aksi agent/admin
+    // ===== ADMIN-ONLY ACTIONS =====
+    /**
+     * Assign Ticket ke Agent
+     * Route: POST /tickets/{ticket}/assign
+     * Middleware: role:admin (hanya admin)
+     * 
+     * FLOW:
+     * 1. Admin pilih agent dari dropdown
+     * 2. POST data agent_id
+     * 3. Ticket status berubah jadi 'assigned'
+     * 4. Agent bisa mulai kerjakan ticket
+     */
     Route::post('/tickets/{ticket}/assign', [TicketController::class, 'assignAgent'])
         ->middleware('role:admin')
         ->name('tickets.assign');
 
+    // ===== ADMIN/AGENT ACTIONS =====
+    /**
+     * Update Status Ticket
+     * Route: POST /tickets/{ticket}/status
+     * Middleware: role:admin,agent
+     * 
+     * FLOW STATUS:
+     * - Agent: bisa ubah ke 'in_progress' atau 'resolved'
+     * - Admin: bisa ubah ke 'assigned' atau 'closed'
+     * 
+     * BUSINESS RULES:
+     * - Agent tidak bisa langsung close ticket (harus resolved dulu)
+     * - Admin hanya bisa close ticket yang sudah resolved
+     * - Tidak bisa kembali ke status 'open' setelah assigned
+     */
     Route::post('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
         ->middleware('role:admin,agent')
         ->name('tickets.updateStatus');
 });
 
+// =================================================================
+// AUTH ROUTES - Login, Register, Forgot Password, dll
+// =================================================================
+// Didefinisikan di routes/auth.php (Laravel Breeze default)
 require __DIR__ . '/auth.php';
